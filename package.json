@@ -1,0 +1,43 @@
+{
+  "name": "defex",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server/server.js",
+  "scripts": {
+    "dev:client": "vite",
+    "dev:server": "nodemon server/server.js",
+    "dev": "concurrently \"npm run dev:client\" \"npm run dev:server\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nomercyzzz/Defex-Project.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/nomercyzzz/Defex-Project/issues"
+  },
+  "homepage": "https://github.com/nomercyzzz/Defex-Project#readme",
+  "dependencies": {
+    "@mdi/font": "^7.4.47",
+    "axios": "^1.13.2",
+    "bcryptjs": "^3.0.3",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongodb": "^7.0.0",
+    "vue": "^3.5.24",
+    "vue-router": "^4.6.3",
+    "vuetify": "^3.10.10"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.1",
+    "concurrently": "^9.2.1",
+    "nodemon": "^3.1.11",
+    "vite": "^7.2.2",
+    "vite-plugin-vuetify": "^2.1.2"
+  }
+}
