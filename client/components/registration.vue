@@ -4,71 +4,148 @@
             <div class="register-container">
                 <h1 class="title">Регистрация</h1>
                 <p class="subtitle">Создайте аккаунт для работы в системе</p>
-                <!-- инпуты -->
-                <v-text-field
-                label="Логин"
-                variant="outlined"
-                hide-details
-                class="input"
-                density="comfortable"
-                prepend-inner-icon="mdi-account-outline"
-                color="primary"
-                rounded="lg"
-                />
-                <v-text-field
-                label="Почта"
-                variant="outlined"
-                hide-details
-                class="input"
-                density="comfortable"
-                prepend-inner-icon="mdi-email-outline"
-                color="primary"
-                rounded="lg"
-                />
-                <v-text-field
-                type="password"
-                label="Пароль"
-                variant="outlined"
-                hide-details
-                class="input"
-                density="comfortable"
-                prepend-inner-icon="mdi-lock-outline"
-                color="primary"
-                rounded="lg"
-                />
-                <v-select
-                label="Роль в системе"
-                variant="outlined"
-                hide-details
-                class="input"
-                density="comfortable"
-                color="primary"
-                prepend-inner-icon="mdi-account-badge-outline"
-                rounded="lg"
-                :items="[
-                    { title: 'Инженер', value: 'engineer' },
-                    { title: 'Менеджер', value: 'manager' },
-                    { title: 'Наблюдатель', value: 'observer' }
-                ]"
-                />
-                <!-- кнопка -->
-                <v-btn
-                block
-                height="46"
-                class="register-btn"
-                color="primary"
-                variant="flat"
-                rounded="lg"
-                >Создать аккаунт</v-btn>
-                <!-- линк -->
-                <p class="bottom-text">
-                Уже есть аккаунт?
-                <a class="accent-link">Войти</a>
-                </p>
+                <v-form ref="form" @submit="onSubmit">
+                    <!-- инпуты -->
+                    <v-text-field
+                        v-model="login"
+                        type="text"
+                        :rules="loginRules"
+                        label="Логин"
+                        variant="outlined"
+                        hide-details="auto"
+                        class="input"
+                        density="comfortable"
+                        prepend-inner-icon="mdi-account-outline"
+                        color="primary"
+                        rounded="lg"
+                        clearable
+                    />
+                    <v-text-field
+                        v-model="email"
+                        type="email"
+                        :rules="emailRules"
+                        label="Почта"
+                        variant="outlined"
+                        hide-details="auto"
+                        class="input"
+                        density="comfortable"
+                        prepend-inner-icon="mdi-email-outline"
+                        color="primary"
+                        rounded="lg"
+                        clearable
+                    />
+                    <v-text-field
+                        v-model="password"
+                        :rules="passwordRules"
+                        :type="showPassword ? 'text' : 'password'"
+                        :append-inner-icon="showPassword ? 'mdi-eye-outline' : 'mdi-eye-off-outline'"
+                        @click:append-inner="showPassword = !showPassword"
+                        label="Пароль"
+                        variant="outlined"
+                        hide-details="auto"
+                        class="input"
+                        density="comfortable"
+                        prepend-inner-icon="mdi-lock-outline"
+                        color="primary"
+                        rounded="lg"
+                    />
+                    <v-select
+                        v-model="role"
+                        :rules="roleRules"
+                        label="Роль в системе"
+                        variant="outlined"
+                        hide-details="auto"
+                        class="input"
+                        density="comfortable"
+                        color="primary"
+                        prepend-inner-icon="mdi-account-badge-outline"
+                        rounded="lg"
+                        :items="[
+                            { title: 'Инженер', value: 'engineer' },
+                            { title: 'Менеджер', value: 'manager' },
+                            { title: 'Наблюдатель', value: 'observer' }
+                        ]"
+                        clearable
+                    />
+                    <!-- кнопка -->
+                    <v-btn
+                        height="44"
+                        width="100%"
+                        class="register-btn"
+                        color="primary"
+                        rounded="lg"
+                        type="submit"
+                        :loading="loading"
+                    >Создать аккаунт</v-btn>
+                    <!-- низ -->
+                    <p class="bottom-text">
+                        Уже есть аккаунт?
+                        <a class="accent-link">Войти</a>
+                    </p>
+                </v-form>
             </div>
         </v-fade-transition>
     </div>
 </template>
+
+<script setup>
+import { ref } from 'vue'
+
+// флаг для показа пароля
+const showPassword = ref(false)
+const form = ref(null)
+
+// получение данных из инпутов 
+const login = ref('')
+const email = ref('')
+const password = ref('')
+const role = ref('')
+
+// валидация
+const loginRules = [
+    v => !!v || 'Введите логин',
+    v => v.length >= 6 || 'Минимум 6 символов',
+    v => v.length <= 30 || 'Максимум 30 символов',
+    v => /^[a-zA-Z][a-zA-Z0-9._-]*$/.test(v) || 'Логин: латинские буквы, цифры и ._- , начинается с буквы'
+]
+const emailRules = [
+    v => !!v || 'Введите почту',
+    v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) || 'Некорректный email'
+]
+const passwordRules = [
+    v => !!v || 'Введите пароль',
+    v => v.length >= 8 || 'Минимум 8 символов',
+    v =>/^[A-Za-z0-9!@#$%^&*(),.?":{}|<>_\-+=/\\[\];'`~]+$/.test(v) || 'Разрешены только латинские буквы, цифры и спецсимволы',
+    v => /[A-Z]/.test(v) || 'Нужна хотя бы одна заглавная буква',
+    v => /[a-z]/.test(v) || 'Нужна хотя бы одна строчная буква',
+    v => /[!@#$%^&*(),.?":{}|<>_\-+=/\\[\];'`~]/.test(v) || 'Нужен хотя бы один спецсимвол',
+    v => !/\s/.test(v) || 'Пароль не должен содержать пробелы'
+]
+const roleRules = [
+    v => !!v || 'Выберите роль в системе'
+]
+// флаг загрузки
+const loading = ref(false)
+
+const onSubmit = async (event) => {
+    event.preventDefault()
+    const result = await form.value.validate()
+    if (!result?.valid) return
+
+    loading.value = true
+    
+    try {
+        console.log('форма отпр', {
+        логин: login.value,
+        почта: email.value,
+        роль: role.value,
+        пароль: password.value})
+    } finally {
+        loading.value = false
+    }
+}
+
+</script>
 
 <style scoped>
 .register-page {

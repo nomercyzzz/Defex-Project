@@ -4,38 +4,49 @@
             <div class="login-container">
                 <h1 class="title">Вход в аккаунт</h1>
                 <p class="subtitle">Введите данные для входа</p>
-                <!-- инпуты -->
-                <v-text-field
-                    label="Логин или Почта"
-                    variant="outlined"
-                    hide-details
-                    class="input"
-                    density="comfortable"
-                    prepend-inner-icon="mdi-account-outline"
-                    color="primary"
-                    rounded="lg"
-                />
-                <v-text-field
-                    type="password"
-                    label="Пароль"
-                    variant="outlined"
-                    hide-details
-                    class="input"
-                    density="comfortable"
-                    prepend-inner-icon="mdi-lock-outline"
-                    color="primary"
-                    rounded="lg"
-                />
-                <!-- кнопка -->
-                <v-btn
-                    block
-                    height="44"
-                    class="login-btn"
-                    color="primary"
-                    variant="flat"
-                    rounded="lg"
-                >Войти</v-btn>
-                <!-- линк -->
+                    <v-form ref="form" @submit="onSubmit">
+                        <!-- инпуты -->
+                        <v-text-field
+                            v-model="loginORemail"
+                            :rules="loginORemailRules"
+                            type="text"
+                            label="Логин или Почта"
+                            variant="outlined"
+                            hide-details="auto"
+                            class="input"
+                            density="comfortable"
+                            prepend-inner-icon="mdi-account-outline"
+                            color="primary"
+                            rounded="lg"
+                            clearable
+                        />
+                        <v-text-field
+                            v-model="password"
+                            :rules="passwordRules"
+                            :type="showPassword ? 'text' : 'password'"
+                            label="Пароль"
+                            variant="outlined"
+                            hide-details="auto"
+                            class="input"
+                            density="comfortable"
+                            prepend-inner-icon="mdi-lock-outline"
+                            color="primary"
+                            rounded="lg"
+                            :append-inner-icon="showPassword ? 'mdi-eye-outline' : 'mdi-eye-off-outline'"
+                            @click:append-inner="showPassword = !showPassword"
+                        />
+                        <!-- кнопка -->
+                        <v-btn
+                            height="44"
+                            width="100%"
+                            class="login-btn"
+                            color="primary"
+                            rounded="lg"
+                            type="submit"
+                            :loading="loading"
+                        >Войти</v-btn>
+                    </v-form>
+                <!-- низ -->
                 <p class="bottom-text">
                     Нет аккаунта?
                     <a class="accent-link">Зарегистрироваться</a>
@@ -44,6 +55,46 @@
         </v-fade-transition>
     </div>
 </template>
+
+<script setup>
+import { ref } from 'vue'
+
+// флаг для показа пароля
+const showPassword = ref(false)
+const form = ref(null)
+
+// получение данных из инпутов 
+const loginORemail = ref('')
+const password = ref('')
+
+// валидация
+const loginORemailRules = [
+    v => !!v || 'Введите логин или почту'
+]
+const passwordRules = [
+    v => !!v || 'Введите пароль',
+]
+// флаг загрузки
+const loading = ref(false)
+
+const onSubmit = async (event) => {
+    event.preventDefault()
+    const result = await form.value.validate()
+    if (!result?.valid) return
+
+    loading.value = true
+    
+    try {
+        console.log('форма отпр', {
+        'логин или почта': loginORemail.value,
+        пароль: password.value})
+    } finally {
+        loading.value = false
+    }
+}
+
+</script>
+
 
 <style scoped>
 .login-page {
