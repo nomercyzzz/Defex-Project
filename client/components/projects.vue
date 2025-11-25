@@ -52,6 +52,7 @@
       <main>
         <section class="filters-card">
             <v-text-field
+              v-model="searchQuery"
               density="comfortable"
               hide-details
               variant="outlined"
@@ -59,10 +60,11 @@
               color="primary"
               style=" max-width: 420px;"
               prepend-inner-icon="mdi-magnify"
-              label="Поиск по объекту, этапу или ответственному"
+              label="Поиск по объекту, этапу, коду или ответственному"
               clearable
             />
             <v-select
+              v-model="statusFilter"
               density="comfortable"
               hide-details
               variant="outlined"
@@ -70,11 +72,12 @@
               color="primary"
               style=" max-width: 305px;"
               prepend-inner-icon="mdi-filter-variant"
-              :items="['Все статусы', 'Новая', 'В работе', 'На проверке', 'Закрыта / Отмена']"
-              label="Фильтр по статусу дефектов"
+              :items="statusOptions"
+              label="Фильтр по статусу проекта"
               clearable
             />
             <v-select
+              v-model="sortOption"
               density="comfortable"
               hide-details
               variant="outlined"
@@ -82,7 +85,7 @@
               color="primary"
               style="max-width: 310px;"
               prepend-inner-icon="mdi-arrow-up-down"
-              :items="['Сроки', 'Приоритет', 'Статус']"
+              :items="sortOptions"
               label="Сортировка списка проектов"
               clearable
             />
@@ -98,13 +101,13 @@
             </v-btn>
         </section>
 
-        <section class="projects">
+        <section class="projects" v-if="filteredProjects.length">
             <v-card 
               class="project-card"
               :class="`status-${colorStatus(project.status)}`"
               color="surface" 
               rounded="xl" 
-              v-for="project in projects" 
+              v-for="project in filteredProjects" 
               :key="project.code"
             >
               <div class="card">
@@ -173,6 +176,11 @@
               </div>
             </v-card>
         </section>
+        <section v-else class="zero-projects">
+          <v-icon size="64" icon="mdi-folder-open-outline" color="secondary"/>
+            <p class="zero-title">Нет проектов</p>
+          <p class="zero-subtitle">Измените фильтры или создайте первый проект, чтобы начать фиксировать дефекты.</p>
+        </section>
       </main>
     </div>
   </div>
@@ -240,15 +248,95 @@ const colorStatus = (status) => {
   return status === 'Новая' || status === 'В работе' ? 'primary' : 'secondary';
 }
 
+const searchQuery = ref('')
+const statusFilter = ref(null)
+const sortOption = ref(null)
+
+const sortOptions = ['Сроки', 'Приоритет', 'Статус']
+const statusOptions = ['Все статусы', 'Новая', 'В работе', 'На проверке', 'Закрыта / Отмена']
+
+const priorityOrder = { 'Высокий': 1, 'Средний': 2, 'Низкий': 3 }
+const statusOrder = { 'Новая': 1, 'В работе': 2, 'На проверке': 3, 'Закрыта / Отмена': 4 }
+
+const sortComparators = {
+  Приоритет: (a, b) => (priorityOrder[a.priority] || 99) - (priorityOrder[b.priority] || 99),
+  Статус: (a, b) => (statusOrder[a.status] || 99) - (statusOrder[b.status] || 99),
+  Сроки: (a, b) => String(a.deadline).localeCompare(String(b.deadline), 'ru')
+}
+
+const searchFields = ['name', 'stage', 'code', 'manager']
+
+const matchesSearch = (project, query) => {
+  const i = query.trim().toLowerCase()
+  if (!i) return true
+
+  const tokens = i.split(/\s+/).filter(Boolean) // разбиваем на слова
+
+  // каждое слово должно хотя бы в ожном из полей встретиться
+  return tokens.every((token) => searchFields.some((field) => String(project[field] || '').toLowerCase().includes(token)
+    )
+  )
+}
+
+// одна функция поиск + фильтр + сортировка
+const prepareProjects = (
+  list,
+  {
+    applySearch = true,
+    applyStatusFilter = true,
+    applySort = true
+  } = {}
+) => {
+  let result = [...list]
+
+  // поиск по нескольким полям
+  if (applySearch && searchQuery.value.trim()) {
+    result = result.filter((p) => matchesSearch(p, searchQuery.value))
+  }
+
+  // фильтр по статусу
+  if (applyStatusFilter && statusFilter.value && statusFilter.value !== 'Все статусы') {
+    result = result.filter((p) => p.status === statusFilter.value)
+  }
+
+  // сортировка
+  if (applySort && sortOption.value) {
+    const comparator = sortComparators[sortOption.value]
+    if (comparator) {
+      result = result.sort(comparator)
+    }
+  }
+
+  return result
+}
+
+// список для карточек (учитыая поиск и флльтр и сортировку)
+const filteredProjects = computed(() => prepareProjects(projects.value, {
+    applySearch: true,
+    applyStatusFilter: true,
+    applySort: true
+  })
+)
+
+// чипы (учитывают поиск и фильтр)
 const projectStats = computed(() => {
-  let projectCount = projects.value.length
+  const list = prepareProjects(projects.value, {
+    applySearch: true,
+    applyStatusFilter: true,
+    applySort: false
+  })
+
+  const projectCount = list.length
   let defectsOpen = 0
   let defectsClosed = 0
-  projects.value.forEach((i) => {
-    defectsOpen+= i.defectsOpen
-    defectsClosed+= i.defectsClosed
+
+  list.forEach((i) => {
+    defectsOpen += i.defectsOpen
+    defectsClosed += i.defectsClosed
   })
-  let defectsCount = defectsOpen + defectsClosed
+
+  const defectsCount = defectsOpen + defectsClosed
+
   return {
     projectCount,
     defectsOpen,
@@ -265,7 +353,6 @@ const projectStats = computed(() => {
   color: rgb(var(--v-theme-on-background));
   display: flex;
   justify-content: center;
-  align-items: center;
   padding: 32px 16px 64px;
   
 }
@@ -414,15 +501,164 @@ main {
 :deep(.v-btn) {
   transition: transform 0.4s ease-out;
 }
-/* стили для chip */
 :deep(.v-btn:active) {
   transform: scale(0.94);
 }
+/* стили для chip */
 :deep(.v-chip) {
   transition: all 0.4s ease-in-out;
 }
 :deep(.v-chip:hover) {
-  transform: scale(0.98);
+  transform: scale(0.99);
   color: rgb(var(--v-theme-primary));
 }
+/* сообщение об отсутсвие проектов */
+.zero-projects {
+  padding: 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  color: rgb(var(--v-theme-secondary));
+}
+
+.zero-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: rgb(var(--v-theme-on-background));
+}
+
+.zero-subtitle {
+  font-size: 16px;
+  line-height: 1.4;
+  max-width: 400px;
+  color: rgb(var(--v-theme-secondary));
+}
+
+
+@media (max-width: 1200px) {
+  .projects-wrapper {
+    max-width: 1120px;
+  }
+  .projects {
+    justify-content: center;
+  }
+  .project-card {
+    width: 48%;
+  }
+  header {
+    align-items:flex-end;
+  }
+}
+
+
+@media (max-width: 1050px) {
+  .projects-page {
+    padding: 24px 12px 48px;
+  }
+
+  header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .header-info {
+    width: 100%;
+  }
+
+  .header-buttons {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .header-buttons .v-btn {
+    min-width: 160px;
+  }
+
+  .header-chips {
+    flex-wrap: wrap;
+  }
+  .filters-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filters-card > * {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .projects {
+    justify-content: center;
+  }
+
+  .project-card {
+    width: 100%;
+  }
+}
+
+
+@media (max-width: 892px) {
+  .project-card {
+    width: 100%;
+  }
+}
+
+@media (max-width: 600px) {
+  .projects-page {
+    padding: 16px 8px 32px;
+  }
+  
+  header {
+    padding: 16px 12px;
+  }
+  .header-buttons .v-btn {
+    width: 100%;            
+  }
+  .header-buttons .v-btn.v-btn--icon{
+    width: 100% !important;
+  }
+  .header-title h1 {
+    font-size: 20px;
+  }
+
+  .header-chips {
+    gap: 6px;
+  }
+
+  .filters-card {
+    padding: 12px;
+    gap: 8px;
+  }
+
+  .project-card {
+    padding: 16px 14px;
+  }
+
+  .card-name {
+    font-size: 18px;
+  }
+
+  .card-stage {
+    font-size: 13px;
+  }
+
+  .card-text {
+    font-size: 13px;
+  }
+
+  .zero-projects {
+    padding: 32px 24px;
+  }
+
+  .zero-title {
+    font-size: 18px;
+  }
+
+  .zero-subtitle {
+    font-size: 14px;
+  }
+}
+
 </style>

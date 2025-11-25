@@ -99,7 +99,7 @@ const form = ref(null)
 const login = ref('')
 const email = ref('')
 const password = ref('')
-const role = ref('')
+const role = ref(null)
 
 // валидация
 const loginRules = [
@@ -230,5 +230,12 @@ const onSubmit = async (event) => {
 
 .accent-link:hover::after {
     transform: translateX(-50%) scaleX(1);
+}
+
+:deep(.v-btn) {
+    transition: transform 0.4s ease-out;
+}
+:deep(.v-btn:active) {
+    transform: scale(0.94);
 }
 </style>
