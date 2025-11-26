@@ -1,5 +1,5 @@
 import { createApp } from 'vue'
-import App from '../components/projects.vue'
+import App from '../components/defects.vue'
 import { createVuetify } from 'vuetify'
 
 import '@mdi/font/css/materialdesignicons.css'

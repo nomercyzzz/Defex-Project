@@ -196,7 +196,7 @@ const projects = ref([
     stage: 'Корпус A · отделка и инженерка',
     status: 'В работе',
     location: 'Москва, Лианозово',
-    deadline: '12 декабря',
+    deadline: '12.11.2025',
     manager: 'Дарья Власова',
     progress: 72,
     defectsOpen: 5,
@@ -209,7 +209,7 @@ const projects = ref([
     stage: 'Паркинг и фасады',
     status: 'На проверке',
     location: 'Санкт-Петербург, Петроградская',
-    deadline: '5 января',
+    deadline: '05.01.2026 января',
     manager: 'Игорь Михайлов',
     progress: 64,
     defectsOpen: 7,
@@ -222,7 +222,7 @@ const projects = ref([
     stage: 'Торговая галерея',
     status: 'Новая',
     location: 'Екатеринбург, центр',
-    deadline: '20 января',
+    deadline: '20.01.2026 января',
     manager: 'Полина Орлова',
     progress: 38,
     defectsOpen: 9,
@@ -235,7 +235,7 @@ const projects = ref([
     stage: 'Благоустройство и подъезды',
     status: 'В работе',
     location: 'Сочи, Хоста',
-    deadline: '2 февраля',
+    deadline: '02.02.2026 февраля',
     manager: 'Андрей Козлов',
     progress: 81,
     defectsOpen: 3,
@@ -267,15 +267,13 @@ const sortComparators = {
 const searchFields = ['name', 'stage', 'code', 'manager']
 
 const matchesSearch = (project, query) => {
-  const i = query.trim().toLowerCase()
+  const i = String(query ?? '').trim().toLowerCase()
   if (!i) return true
 
   const tokens = i.split(/\s+/).filter(Boolean) // разбиваем на слова
 
   // каждое слово должно хотя бы в ожном из полей встретиться
-  return tokens.every((token) => searchFields.some((field) => String(project[field] || '').toLowerCase().includes(token)
-    )
-  )
+  return tokens.every((token) => searchFields.some((field) => String(project[field] || '').toLowerCase().includes(token)))
 }
 
 // одна функция поиск + фильтр + сортировка
@@ -290,7 +288,8 @@ const prepareProjects = (
   let result = [...list]
 
   // поиск по нескольким полям
-  if (applySearch && searchQuery.value.trim()) {
+  const searchValue = String(searchQuery.value ?? '')
+  if (applySearch && searchValue.trim()) {
     result = result.filter((p) => matchesSearch(p, searchQuery.value))
   }
 
@@ -505,10 +504,10 @@ main {
   transform: scale(0.94);
 }
 /* стили для chip */
-:deep(.v-chip) {
+.header-chips :deep(.v-chip) {
   transition: all 0.4s ease-in-out;
 }
-:deep(.v-chip:hover) {
+.header-chips :deep(.v-chip:hover) {
   transform: scale(0.99);
   color: rgb(var(--v-theme-primary));
 }
