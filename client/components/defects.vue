@@ -676,4 +676,132 @@ main {
   max-width: 420px;
   color: rgb(var(--v-theme-secondary));
 }
+
+/* адаптация */
+
+@media (max-width: 1200px) {
+  .defects-wrapper {
+    max-width: 1120px;
+  }
+
+  .defects {
+    gap: 14px;
+  }
+}
+
+@media (max-width: 1050px) {
+  .defects-page {
+    padding: 24px 12px 48px;
+  }
+
+  header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .header-info {
+    width: 100%;
+  }
+
+  .header-buttons {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .header-buttons .v-btn {
+    min-width: 160px;
+  }
+
+  .header-chips {
+    flex-wrap: wrap;
+  }
+
+  .filters-card {
+    flex-direction: column;
+    align-items: stretch;
+    flex-wrap: nowrap;
+  }
+
+  .filters-card > * {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
+
+@media (max-width: 892px) {
+  .defect-card {
+    padding: 16px 16px 14px;
+  }
+
+  .card-title {
+    font-size: 18px;
+  }
+}
+
+@media (max-width: 600px) {
+  .defects-page {
+    padding: 16px 8px 32px;
+  }
+
+  header {
+    padding: 16px 12px;
+  }
+
+  .header-title h1 {
+    font-size: 20px;
+  }
+
+  .header-buttons .v-btn {
+    width: 100%;
+  }
+
+  .card-top {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .card-status-group {
+    align-self: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .defect-card {
+    padding: 14px 14px 12px;
+  }
+
+  .card-subtitle {
+    font-size: 12px;
+  }
+
+  .card-row {
+    font-size: 13px;
+  }
+
+  .card-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .card-footer-left {
+    width: 100%;
+    flex-wrap: wrap;
+    white-space: normal;
+  }
+
+  .zero-defects {
+    padding: 32px 24px;
+  }
+
+  .zero-title {
+    font-size: 18px;
+  }
+
+  .zero-subtitle {
+    font-size: 14px;
+  }
+}
+
 </style>
