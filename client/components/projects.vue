@@ -4,7 +4,7 @@
       <header>
           <div class="header-info">
             <div class="header-title">
-              <v-icon icon="mdi-timeline-text-outline" color="primary" size="40" />
+              <v-icon icon="mdi-domain" color="primary" size="40" />
               <h1>Объекты и этапы работ</h1>
             </div>
             <div class="header-chips">
@@ -12,25 +12,25 @@
                 size="default"
                 prepend-icon="mdi-office-building-outline"
                 >
-                Проектов: {{ projectStats.projectCount }}
-              </v-chip>
-              <v-chip
-                size="default"
-                prepend-icon="mdi-alert-circle-outline"
-                >
-                Всего дефектов: {{ projectStats.defectsCount }}
+                Проектов: {{ projectStats.total }}
               </v-chip>
               <v-chip
                 size="default"
                 prepend-icon="mdi-progress-clock"
+                >
+                Новые / в работе: {{ projectStats.active  }}
+              </v-chip>
+              <v-chip
+                size="default"
+                prepend-icon="mdi-eye-arrow-right-outline"
               >
-                Открытых дефектов: {{ projectStats.defectsOpen }}
+                На проверке: {{ projectStats.inReview }}
               </v-chip>
               <v-chip
                 size="default"
                 prepend-icon="mdi-check-circle-outline"
               >
-                Закрытых дефектов: {{ projectStats.defectsClosed }}
+                Закрыто / отменено: {{ projectStats.closed }}
               </v-chip>
             </div>
           </div>
@@ -60,7 +60,7 @@
               color="primary"
               style=" max-width: 420px;"
               prepend-inner-icon="mdi-magnify"
-              label="Поиск по объекту, этапу, коду или ответственному"
+              label="Поиск по объекту, коду или описанию"
               clearable
             />
             <v-select
@@ -70,10 +70,23 @@
               variant="outlined"
               rounded="lg"
               color="primary"
-              style=" max-width: 305px;"
+              style=" max-width: 240px;"
               prepend-inner-icon="mdi-filter-variant"
               :items="statusOptions"
-              label="Фильтр по статусу проекта"
+              label="Фильтр по статусу"
+              clearable
+            />
+            <v-select
+              v-model="priorityFilter"
+              :items="priorityOptions"
+              density="comfortable"
+              hide-details
+              variant="outlined"
+              rounded="lg"
+              color="primary"
+              style="max-width: 260px;"
+              prepend-inner-icon="mdi-alert-decagram-outline"
+              label="Фильтр по приоритету"
               clearable
             />
             <v-select
@@ -89,16 +102,6 @@
               label="Сортировка списка проектов"
               clearable
             />
-            <v-btn
-              color="primary"
-              variant="tonal"
-              rounded="lg"
-              size="large"
-              height="48"
-              prepend-icon="mdi-file-excel-outline"
-            >
-              Экспорт Excel
-            </v-btn>
         </section>
 
         <section class="projects" v-if="filteredProjects.length">
@@ -137,7 +140,7 @@
                 </div>
                 <div class="card-text">
                   <v-icon icon="mdi-calendar-clock" size="18" :color="colorStatus(project.status)" />
-                  <p>Срок: {{ project.deadline }}</p>
+                  <p>Срок: {{ formatDeadline(project.deadline) }}</p>
                 </div>
                 <div class="card-text">
                   <v-icon icon="mdi-account-tie-outline" size="18" :color="colorStatus(project.status)" />
@@ -196,7 +199,7 @@ const projects = ref([
     stage: 'Корпус A · отделка и инженерка',
     status: 'В работе',
     location: 'Москва, Лианозово',
-    deadline: '12.11.2025',
+    deadline: '2025-11-12',
     manager: 'Дарья Власова',
     progress: 72,
     defectsOpen: 5,
@@ -209,7 +212,7 @@ const projects = ref([
     stage: 'Паркинг и фасады',
     status: 'На проверке',
     location: 'Санкт-Петербург, Петроградская',
-    deadline: '05.01.2026 января',
+    deadline: '2026-01-23',
     manager: 'Игорь Михайлов',
     progress: 64,
     defectsOpen: 7,
@@ -222,7 +225,7 @@ const projects = ref([
     stage: 'Торговая галерея',
     status: 'Новая',
     location: 'Екатеринбург, центр',
-    deadline: '20.01.2026 января',
+    deadline: '2026-01-20',
     manager: 'Полина Орлова',
     progress: 38,
     defectsOpen: 9,
@@ -235,7 +238,7 @@ const projects = ref([
     stage: 'Благоустройство и подъезды',
     status: 'В работе',
     location: 'Сочи, Хоста',
-    deadline: '02.02.2026 февраля',
+    deadline: '2026-01-01',
     manager: 'Андрей Козлов',
     progress: 81,
     defectsOpen: 3,
@@ -247,13 +250,21 @@ const projects = ref([
 const colorStatus = (status) => {
   return status === 'Новая' || status === 'В работе' ? 'primary' : 'secondary';
 }
+// функция для перевода даты
+const formatDeadline = (deadline) => {
+  if (!deadline) return ''
+  const sorted = deadline.split('-').reverse()
+  return sorted.join('.')
+}
 
 const searchQuery = ref('')
 const statusFilter = ref(null)
+const priorityFilter = ref(null)
 const sortOption = ref(null)
 
 const sortOptions = ['Сроки', 'Приоритет', 'Статус']
-const statusOptions = ['Все статусы', 'Новая', 'В работе', 'На проверке', 'Закрыта / Отмена']
+const statusOptions = ['Новая', 'В работе', 'На проверке', 'Закрыта / Отмена']
+const priorityOptions = ['Высокий', 'Средний', 'Низкий']
 
 const priorityOrder = { 'Высокий': 1, 'Средний': 2, 'Низкий': 3 }
 const statusOrder = { 'Новая': 1, 'В работе': 2, 'На проверке': 3, 'Закрыта / Отмена': 4 }
@@ -261,10 +272,10 @@ const statusOrder = { 'Новая': 1, 'В работе': 2, 'На провер�
 const sortComparators = {
   Приоритет: (a, b) => (priorityOrder[a.priority] || 99) - (priorityOrder[b.priority] || 99),
   Статус: (a, b) => (statusOrder[a.status] || 99) - (statusOrder[b.status] || 99),
-  Сроки: (a, b) => String(a.deadline).localeCompare(String(b.deadline), 'ru')
+  Сроки: (a, b) => String(a.deadline || '').localeCompare(String(b.deadline || ''))
 }
 
-const searchFields = ['name', 'stage', 'code', 'manager']
+const searchFields = ['name', 'stage', 'code', 'manager', 'location', 'deadline']
 
 const matchesSearch = (project, query) => {
   const i = String(query ?? '').trim().toLowerCase()
@@ -282,6 +293,7 @@ const prepareProjects = (
   {
     applySearch = true,
     applyStatusFilter = true,
+    applyPriorityFilter = true,
     applySort = true
   } = {}
 ) => {
@@ -294,8 +306,13 @@ const prepareProjects = (
   }
 
   // фильтр по статусу
-  if (applyStatusFilter && statusFilter.value && statusFilter.value !== 'Все статусы') {
+  if (applyStatusFilter && statusFilter.value) {
     result = result.filter((p) => p.status === statusFilter.value)
+  }
+
+  // фильтр по приоритету
+  if (applyPriorityFilter && priorityFilter.value) {
+    result = result.filter((d) => d.priority === priorityFilter.value)
   }
 
   // сортировка
@@ -313,6 +330,7 @@ const prepareProjects = (
 const filteredProjects = computed(() => prepareProjects(projects.value, {
     applySearch: true,
     applyStatusFilter: true,
+    applyPriorityFilter: true,
     applySort: true
   })
 )
@@ -325,22 +343,23 @@ const projectStats = computed(() => {
     applySort: false
   })
 
-  const projectCount = list.length
-  let defectsOpen = 0
-  let defectsClosed = 0
+  const total = list.length
+  let newCount = 0
+  let inWork = 0
+  let inReview = 0
+  let closed = 0
 
   list.forEach((i) => {
-    defectsOpen += i.defectsOpen
-    defectsClosed += i.defectsClosed
+    if (i.status === 'Новая') newCount++
+    else if (i.status === 'В работе') inWork++
+    else if (i.status === 'На проверке') inReview++
+    else if (i.status === 'Закрыта / Отмена') closed++
   })
-
-  const defectsCount = defectsOpen + defectsClosed
-
   return {
-    projectCount,
-    defectsOpen,
-    defectsClosed,
-    defectsCount
+    total,
+    active: newCount + inWork,
+    inReview,
+    closed
   }
 })
 </script>
@@ -428,7 +447,7 @@ main {
   width: 422px;
   padding: 20px;
   border: 1px solid rgba(255, 255, 255, 0.04);
-  transition: all 0.4s ease-in-out;
+  transition: all 0.4s ease-out;
 }
 
 .project-card:hover {
@@ -498,18 +517,17 @@ main {
 }
 /* общие стили для кнопок  */
 :deep(.v-btn) {
-  transition: transform 0.4s ease-out;
+  transition: all 0.4s ease-out;
 }
 :deep(.v-btn:active) {
   transform: scale(0.94);
 }
 /* стили для chip */
 .header-chips :deep(.v-chip) {
-  transition: all 0.4s ease-in-out;
+  transition: all 0.4s ease-out;
 }
 .header-chips :deep(.v-chip:hover) {
-  transform: scale(0.99);
-  color: rgb(var(--v-theme-primary));
+  transform: translateY(-2px);
 }
 /* сообщение об отсутсвие проектов */
 .zero-projects {

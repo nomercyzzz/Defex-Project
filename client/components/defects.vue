@@ -39,10 +39,10 @@
             rounded="lg"
             size="large"
             height="44"
-            prepend-icon="mdi-file-excel-outline"
-          >
-            Экспорт Excel
-          </v-btn>
+              prepend-icon="mdi-arrow-left"
+            >
+              к проектам
+            </v-btn>
         </div>
       </header>
 
@@ -57,7 +57,7 @@
             color="primary"
             style="max-width: 420px;"
             prepend-inner-icon="mdi-magnify"
-            label="Поиск по коду, описанию или ответственному"
+            label="Поиск по коду, названию и содержимому дефекта"
             clearable
           />
 
@@ -113,101 +113,54 @@
             color="surface"
             rounded="xl"
           >
-            <div class="card-top">
-              <p class="card-id">
-                {{ defect.id }} · ЖК «Северный квартал»
-              </p>
-
-              <div class="card-status-group">
-                <v-chip
-                  :color="colorStatus(defect.status)"
-                  label
-                  size="small"
-                  variant="outlined"
-                  prepend-icon="mdi-alert-decagram-outline"
-                >
-                  Приоритет: {{ defect.priority }}
-                </v-chip>
-                <v-chip
-                  :color="colorStatus(defect.status)"
-                  label
-                  size="small"
-                  variant="tonal"
-                  prepend-icon="mdi-progress-check"
-                >
-                  {{ defect.status }}
-                </v-chip>
+            <div class="card">
+              <div>
+                <p class="card-location">{{ defect.location }}</p>
+                <p class="card-name">
+                  {{ defect.title }}
+                </p>
               </div>
+
+              <v-chip
+                :color="colorStatus(defect.status)"
+                label
+                size="small"
+                variant="tonal"
+                prepend-icon="mdi-progress-check"
+              >
+                {{ defect.status }}
+              </v-chip>
             </div>
 
-            <h2 class="card-title">
-              {{ defect.title }}
-            </h2>
-
-            <p class="card-subtitle">
-              Корпус A · отделка и инженерка · {{ defect.location }}
-            </p>
-
-            <div class="card-info-row">
-              <div class="card-row">
-                <v-icon
-                  icon="mdi-account-tie-outline"
-                  size="18"
-                  :color="colorStatus(defect.status)"
-                />
-                <p>
-                  <span class="card-label">Ответственный:</span>
-                  <span>{{ defect.responsible }}</span>
-                </p>
+            <div class="card-info">
+              
+              <div class="card-text">
+                <v-icon icon="mdi-tag-outline" size="18" :color="colorStatus(defect.status)" />
+                <p>Код: {{ defect.id }}</p>
               </div>
-              <div class="card-row">
-                <v-icon
-                  icon="mdi-calendar-plus"
-                  size="18"
-                  :color="colorStatus(defect.status)"
-                />
-                <p>
-                  <span class="card-label">Создан:</span>
-                  <span>{{ defect.createdAt }}</span>
-                </p>
+
+              <div class="card-text">
+                <v-icon icon="mdi-calendar-clock" size="18" :color="colorStatus(defect.status)" />
+                <p>Срок: {{ formatDeadline(defect.deadline) }}</p>
               </div>
+
+              
+              
+              <div class="card-text">
+                <v-icon icon="mdi-account-outline" size="18" :color="colorStatus(defect.status)" />
+                <p>Автор: {{ defect.author }}</p>
+              </div>
+              <div class="card-text">
+                <v-icon icon="mdi-account-tie-outline" size="18" :color="colorStatus(defect.status)" />
+                <p>Ответственный: {{ defect.responsible }}</p>
+              </div>
+
+            
             </div>
-
-            <div class="card-info-row">
-              <div class="card-row">
-                <v-icon
-                  icon="mdi-account-outline"
-                  size="18"
-                  :color="colorStatus(defect.status)"
-                />
-                <p>
-                  <span class="card-label">Автор:</span>
-                  <span>{{ defect.author }}</span>
-                </p>
-              </div>
-              <div class="card-row">
-                <v-icon
-                  icon="mdi-calendar-clock"
-                  size="18"
-                  :color="colorStatus(defect.status)"
-                />
-                <p>
-                  <span class="card-label">Срок устранения:</span>
-                  <span>{{ defect.deadline }}</span>
-                </p>
-              </div>
-            </div>
-
             <div class="card-footer">
-              <div class="card-footer-left">
-                <div class="card-row">
-                  <v-icon icon="mdi-message-text-outline" size="18" />
-                  <p>Комментариев: {{ defect.comments }}</p>
-                </div>
-                <div class="card-row meta-item">
-                  <v-icon icon="mdi-paperclip" size="18" />
-                  <p>Вложений: {{ defect.attachments }}</p>
-                </div>
+              <div class="card-text">
+                <v-icon icon="mdi-alert-decagram-outline" size="18" :color="colorStatus(defect.status)" />
+                <p>Приоритет: {{ defect.priority }}</p>
               </div>
 
               <v-btn
@@ -217,11 +170,12 @@
                 rounded="lg"
                 height="36"
               >
-                Открыть карточку
+                Открыть
               </v-btn>
             </div>
           </v-card>
         </section>
+
 
         <section v-else class="zero-defects">
           <v-icon size="64" icon="mdi-clipboard-alert-outline" color="secondary"/>
@@ -245,8 +199,7 @@ const defects = ref([
     priority: 'Высокий',
     responsible: 'Иван Петров',
     author: 'Дарья Власова',
-    createdAt: '02.11.2025',
-    deadline: '10.11.2025',
+    deadline: '2025-11-10',
     comments: 3,
     attachments: 2,
   },
@@ -258,8 +211,7 @@ const defects = ref([
     priority: 'Средний',
     responsible: 'Олег Смирнов',
     author: 'Инженер технадзора',
-    createdAt: '01.11.2025',
-    deadline: '15.11.2025',
+    deadline: '2025-11-15',
     comments: 1,
     attachments: 1,
   },
@@ -271,8 +223,7 @@ const defects = ref([
     priority: 'Низкий',
     responsible: 'Иван Петров',
     author: 'Мастер участка',
-    createdAt: '03.11.2025',
-    deadline: '18.11.2025',
+    deadline: '2025-11-18',
     comments: 2,
     attachments: 1,
   },
@@ -284,8 +235,7 @@ const defects = ref([
     priority: 'Высокий',
     responsible: 'Иван Петров',
     author: 'Инженер ПТО',
-    createdAt: '04.11.2025',
-    deadline: '20.11.2025',
+    deadline: '2025-11-20',
     comments: 0,
     attachments: 2,
   },
@@ -297,8 +247,7 @@ const defects = ref([
     priority: 'Средний',
     responsible: 'Олег Смирнов',
     author: 'Инженер технадзора',
-    createdAt: '05.11.2025',
-    deadline: '22.11.2025',
+    deadline: '2025-11-22',
     comments: 4,
     attachments: 3,
   },
@@ -310,8 +259,7 @@ const defects = ref([
     priority: 'Высокий',
     responsible: 'Иван Петров',
     author: 'Заказчик',
-    createdAt: '01.11.2025',
-    deadline: '25.11.2025',
+    deadline: '2025-11-25',
     comments: 3,
     attachments: 4,
   },
@@ -323,8 +271,7 @@ const defects = ref([
     priority: 'Высокий',
     responsible: 'Иван Петров',
     author: 'Технадзор',
-    createdAt: '20.10.2025',
-    deadline: '30.10.2025',
+    deadline: '2025-10-30',
     comments: 2,
     attachments: 2,
   },
@@ -336,8 +283,7 @@ const defects = ref([
     priority: 'Низкий',
     responsible: 'Иван Петров',
     author: 'Заказчик',
-    createdAt: '18.10.2025',
-    deadline: '01.11.2025',
+    deadline: '2025-11-01',
     comments: 1,
     attachments: 1,
   },
@@ -349,8 +295,7 @@ const defects = ref([
     priority: 'Высокий',
     responsible: 'Игорь Михайлов',
     author: 'Технадзор',
-    createdAt: '28.10.2025',
-    deadline: '20.11.2025',
+    deadline: '2025-11-20',
     comments: 4,
     attachments: 3,
   }
@@ -360,14 +305,21 @@ const colorStatus = (status) => {
   return status === 'Новая' || status === 'В работе' ? 'primary' : 'secondary'
 }
 
+// функция для перевода даты
+const formatDeadline = (deadline) => {
+  if (!deadline) return ''
+  const sorted = deadline.split('-').reverse()
+  return sorted.join('.')
+}
+
 const searchQuery = ref('')
 const statusFilter = ref(null)
 const priorityFilter = ref(null)
 const sortOption = ref(null)
 
 const sortOptions = ['Сроки', 'Приоритет', 'Статус']
-const statusOptions = ['Все статусы', 'Новая', 'В работе', 'На проверке', 'Закрыта / Отмена']
-const priorityOptions = ['Все приоритеты', 'Высокий', 'Средний', 'Низкий']
+const statusOptions = ['Новая', 'В работе', 'На проверке', 'Закрыта / Отмена']
+const priorityOptions = ['Высокий', 'Средний', 'Низкий']
 
 const priorityOrder = { 'Высокий': 1, 'Средний': 2, 'Низкий': 3 }
 const statusOrder = { 'Новая': 1, 'В работе': 2, 'На проверке': 3, 'Закрыта / Отмена': 4 }
@@ -375,7 +327,7 @@ const statusOrder = { 'Новая': 1, 'В работе': 2, 'На провер�
 const sortComparators = {
   Приоритет: (a, b) => (priorityOrder[a.priority] || 99) - (priorityOrder[b.priority] || 99),
   Статус: (a, b) => (statusOrder[a.status] || 99) - (statusOrder[b.status] || 99),
-  Сроки: (a, b) => String(a.deadline).localeCompare(String(b.deadline), 'ru')
+  Сроки: (a, b) => String(a.deadline || '').localeCompare(String(b.deadline || ''))
 }
 
 // поля, по которым ищем
@@ -410,12 +362,12 @@ const prepareDefects = (
   }
 
   // фильтр по статусу
-  if (applyStatusFilter && statusFilter.value && statusFilter.value !== 'Все статусы') {
+  if (applyStatusFilter && statusFilter.value) {
     result = result.filter((d) => d.status === statusFilter.value)
   }
 
   // фильтр по приоритету
-  if (applyPriorityFilter && priorityFilter.value && priorityFilter.value !== 'Все приоритеты') {
+  if (applyPriorityFilter && priorityFilter.value) {
     result = result.filter((d) => d.priority === priorityFilter.value)
   }
 
@@ -547,19 +499,20 @@ main {
 /* карточки */
 .defects {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   gap: 16px;
 }
 
 .defect-card {
-  padding: 18px 18px 16px;
+  width: 422px;
+  padding: 20px;
   border: 1px solid rgba(255, 255, 255, 0.04);
-  transition: all 0.4s ease-in-out;
+  transition: all 0.4s ease-out
 }
 
 .defect-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
 }
 
 .defect-card.status-primary:hover {
@@ -570,70 +523,45 @@ main {
   border-color: rgba(var(--v-theme-secondary), 0.2);
 }
 
-.card-top {
+/* внутренность карточки – такие же классы, как у projects */
+.card {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  gap: 10px;
+  align-items: flex-start;
 }
-
-
-.card-id {
-  font-size: 13px;
-  color: rgb(var(--v-theme-secondary));
-}
-
-.card-title {
-  font-size: 20px;
-  font-weight: 600;
-  line-height: 1.25;
-}
-
-.card-subtitle {
-  margin: 4px 0 0;
-  font-size: 13px;
-  color: rgb(var(--v-theme-secondary));
-}
-
-/* чипы справа сверху */
-.card-status-group {
-  display: flex;
-  gap: 6px;
-}
-
-/* строки с парами полей */
-.card-info-row {
-  display: flex;
-  flex-wrap: wrap;
-  margin-top: 8px;   
-}
-
-.card-row {
-  display: flex;
-  align-items: center;
-  gap: 4px;
+.card-location {
   font-size: 14px;
   color: rgb(var(--v-theme-secondary));
-  flex: 1 1 1px;
+}
+.card-name {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.2;
+  max-width: 240px;
 }
 
-.card-label {
-  font-weight: 500;
-  color: rgb(var(--v-theme-on-background));
-  margin-right: 4px;
+.card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
 }
 
-/* низ карточки */
+.card-text {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgb(var(--v-theme-secondary));
+  font-size: 14px;
+}
+
 .card-footer {
-  margin-top: 8px;
+  margin-top: 14px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-}
-
-.card-footer-left {
-  display: flex;
-  gap: 8px;
-  white-space: nowrap;
 }
 
 
@@ -647,11 +575,10 @@ main {
 }
 
 .header-chips :deep(.v-chip) {
-  transition: all 0.4s ease-in-out;
+  transition: all 0.4s ease-out;
 }
 .header-chips :deep(.v-chip:hover) {
-  transform: scale(0.99);
-  color: rgb(var(--v-theme-primary));
+  transform: translateY(-2px);
 }
 
 /* сообщение об отсутсвие дефектов */
@@ -677,7 +604,7 @@ main {
   color: rgb(var(--v-theme-secondary));
 }
 
-/* адаптация */
+/* адаптив */
 
 @media (max-width: 1200px) {
   .defects-wrapper {
@@ -685,7 +612,15 @@ main {
   }
 
   .defects {
-    gap: 14px;
+    justify-content: center;
+  }
+
+  .defect-card {
+    width: 48%;
+  }
+
+  header {
+    align-items: flex-end;
   }
 }
 
@@ -720,28 +655,28 @@ main {
   .filters-card {
     flex-direction: column;
     align-items: stretch;
-    flex-wrap: nowrap;
   }
 
   .filters-card > * {
     width: 100% !important;
     max-width: 100% !important;
   }
-}
 
-@media (max-width: 892px) {
+  .defects {
+    justify-content: center;
+  }
+
   .defect-card {
-    padding: 16px 16px 14px;
+    width: 100%;
   }
-
-  .card-title {
-    font-size: 18px;
+  .card-name {
+    max-width: 100%;
   }
 }
 
-@media (max-width: 600px) {
+@media (max-width: 780px) {
   .defects-page {
-    padding: 16px 8px 32px;
+    padding: 20px 10px 36px;
   }
 
   header {
@@ -752,44 +687,55 @@ main {
     font-size: 20px;
   }
 
+  .defect-card {
+    padding: 16px 14px;
+  }
+
+  .card-name {
+    font-size: 18px;
+    max-width: 100%;
+  }
+
+  .card-location {
+    font-size: 13px;
+  }
+
+  .card-text {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 600px) {
+  .defects-page {
+    padding: 16px 8px 32px;
+  }
+
+  header {
+    padding: 14px 10px;
+  }
+
   .header-buttons .v-btn {
     width: 100%;
   }
 
-  .card-top {
-    align-items: flex-start;
-    flex-direction: column;
+  .header-chips {
     gap: 6px;
   }
 
-  .card-status-group {
-    align-self: flex-start;
-    flex-wrap: wrap;
+  .filters-card {
+    padding: 12px;
+    gap: 8px;
   }
 
   .defect-card {
-    padding: 14px 14px 12px;
+    padding: 16px 14px;
   }
 
-  .card-subtitle {
-    font-size: 12px;
-  }
-
-  .card-row {
-    font-size: 13px;
-  }
-
-  .card-footer {
+  .card {
     flex-direction: column;
-    align-items: flex-start;
     gap: 6px;
   }
 
-  .card-footer-left {
-    width: 100%;
-    flex-wrap: wrap;
-    white-space: normal;
-  }
 
   .zero-defects {
     padding: 32px 24px;
@@ -803,5 +749,4 @@ main {
     font-size: 14px;
   }
 }
-
 </style>
