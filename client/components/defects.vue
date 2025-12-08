@@ -218,7 +218,7 @@ const defects = ref([
   {
     id: 'DF-003',
     location: 'Квартира 1207',
-    title: 'Неплотное примыкание наличника к дверной коробке',
+    title: 'Неплотное примыкание двери к коробке',
     status: 'На проверке',
     priority: 'Низкий',
     responsible: 'Иван Петров',
@@ -298,16 +298,17 @@ const defects = ref([
     deadline: '2025-11-20',
     comments: 4,
     attachments: 3,
-  }
+  },
 ])
 // функция для получения цвета
 const colorStatus = (status) => {
-  return status === 'Новая' || status === 'В работе' ? 'primary' : 'secondary'
+  return status === 'Новая' || status === 'В работе' ? 'primary' : 'secondary';
 }
 
 // функция для перевода даты
 const formatDeadline = (deadline) => {
   if (!deadline) return ''
+
   const sorted = deadline.split('-').reverse()
   return sorted.join('.')
 }
@@ -321,12 +322,24 @@ const sortOptions = ['Сроки', 'Приоритет', 'Статус']
 const statusOptions = ['Новая', 'В работе', 'На проверке', 'Закрыта / Отмена']
 const priorityOptions = ['Высокий', 'Средний', 'Низкий']
 
-const priorityOrder = { 'Высокий': 1, 'Средний': 2, 'Низкий': 3 }
-const statusOrder = { 'Новая': 1, 'В работе': 2, 'На проверке': 3, 'Закрыта / Отмена': 4 }
+const priorityOrder = {
+  'Высокий': 1, 
+  'Средний': 2, 
+  'Низкий': 3 
+}
+
+const statusOrder = { 
+  'Новая':1, 
+  'В работе': 2, 
+  'На проверке':3, 
+  'Закрыта / Отмена':4 
+}
 
 const sortComparators = {
-  Приоритет: (a, b) => (priorityOrder[a.priority] || 99) - (priorityOrder[b.priority] || 99),
-  Статус: (a, b) => (statusOrder[a.status] || 99) - (statusOrder[b.status] || 99),
+  Приоритет: (a, b) => (priorityOrder[a.priority] || 9999) - (priorityOrder[b.priority] || 9999),
+
+  Статус: (a, b) => (statusOrder[a.status] || 9999) - (statusOrder[b.status] || 9999),
+
   Сроки: (a, b) => String(a.deadline || '').localeCompare(String(b.deadline || ''))
 }
 
@@ -464,7 +477,7 @@ header {
 }
 
 .header-title h1 {
-  font-weight: 600;
+  font-weight: 700;
   line-height: 1.2;
 }
 

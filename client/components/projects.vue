@@ -182,7 +182,7 @@
         <section v-else class="zero-projects">
           <v-icon size="64" icon="mdi-folder-open-outline" color="secondary"/>
             <p class="zero-title">Нет проектов</p>
-          <p class="zero-subtitle">Измените фильтры или создайте первый проект, чтобы начать фиксировать дефекты.</p>
+          <p class="zero-subtitle">Измените фильтры или создайте первый проект, чтобы начать фиксировать дефекты</p>
         </section>
       </main>
     </div>
@@ -195,9 +195,9 @@ import { computed, ref } from 'vue'
 const projects = ref([
   {
     code: 'OB-001',
-    name: 'ЖК «Северный квартал»',
-    stage: 'Корпус A · отделка и инженерка',
-    status: 'В работе',
+    name: 'ЖК "Северный квартал"',
+    stage: 'Корпус A - отделка и инженерка',
+    status: 'В работе' ,
     location: 'Москва, Лианозово',
     deadline: '2025-11-12',
     manager: 'Дарья Власова',
@@ -208,20 +208,20 @@ const projects = ref([
   },
   {
     code: 'BC-002',
-    name: 'БЦ «Нева Плаза»',
+    name: 'БЦ "Нева Плаза"',
     stage: 'Паркинг и фасады',
     status: 'На проверке',
     location: 'Санкт-Петербург, Петроградская',
     deadline: '2026-01-23',
     manager: 'Игорь Михайлов',
-    progress: 64,
+    progress: 64 ,
     defectsOpen: 7,
     defectsClosed: 25,
     priority: 'Высокий'
   },
   {
     code: 'TRK-003',
-    name: 'ТРК «Каскад»',
+    name: 'ТРК "Каскад"',
     stage: 'Торговая галерея',
     status: 'Новая',
     location: 'Екатеринбург, центр',
@@ -234,7 +234,7 @@ const projects = ref([
   },
   {
     code: 'JK-004',
-    name: 'ЖК «Южный берег»',
+    name: 'ЖК "Южный берег"',
     stage: 'Благоустройство и подъезды',
     status: 'В работе',
     location: 'Сочи, Хоста',
@@ -244,7 +244,7 @@ const projects = ref([
     defectsOpen: 3,
     defectsClosed: 29,
     priority: 'Низкий'
-  }
+  },
 ])
 // функция для получения цвета
 const colorStatus = (status) => {
@@ -253,6 +253,7 @@ const colorStatus = (status) => {
 // функция для перевода даты
 const formatDeadline = (deadline) => {
   if (!deadline) return ''
+
   const sorted = deadline.split('-').reverse()
   return sorted.join('.')
 }
@@ -262,16 +263,27 @@ const statusFilter = ref(null)
 const priorityFilter = ref(null)
 const sortOption = ref(null)
 
-const sortOptions = ['Сроки', 'Приоритет', 'Статус']
-const statusOptions = ['Новая', 'В работе', 'На проверке', 'Закрыта / Отмена']
-const priorityOptions = ['Высокий', 'Средний', 'Низкий']
+const sortOptions = ['Сроки','Приоритет','Статус']
+const statusOptions = ['Новая','В работе','На проверке', 'Закрыта / Отмена']
+const priorityOptions = ['Высокий','Средний','Низкий']
 
-const priorityOrder = { 'Высокий': 1, 'Средний': 2, 'Низкий': 3 }
-const statusOrder = { 'Новая': 1, 'В работе': 2, 'На проверке': 3, 'Закрыта / Отмена': 4 }
-
+const priorityOrder = { 
+  'Высокий':1, 
+  'Средний':2, 
+  'Низкий': 3 
+}
+const statusOrder = { 
+  'Новая':1, 
+  'В работе': 2, 
+  'На проверке':3, 
+  'Закрыта / Отмена':4 
+}
+// функция для сортировки 
 const sortComparators = {
-  Приоритет: (a, b) => (priorityOrder[a.priority] || 99) - (priorityOrder[b.priority] || 99),
-  Статус: (a, b) => (statusOrder[a.status] || 99) - (statusOrder[b.status] || 99),
+  Приоритет: (a, b) => (priorityOrder[a.priority] || 9999) - (priorityOrder[b.priority] || 9999),
+
+  Статус: (a, b) => (statusOrder[a.status] || 9999) - (statusOrder[b.status] || 9999),
+
   Сроки: (a, b) => String(a.deadline || '').localeCompare(String(b.deadline || ''))
 }
 

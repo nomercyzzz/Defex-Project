@@ -137,12 +137,21 @@ import { ref } from 'vue'
 
 // комментарии
 const comments = ref([
-    { id: 1, author: 'Инженер технадзора', date: '05.11.2025', text: 'Дефект зафиксирован, жду выезда бригады.' },
-    { id: 2, author: 'Мастер участка', date: '06.11.2025', text: 'Назначена бригада, работы до 10.11.' }
+    {
+        id: 11,
+        author: 'Инженер технадзора',
+        date: '05.11.2025', 
+        text: 'Дефект зафиксирован, требуеться ремонт' 
+    },
+    { 
+        id: 12,
+        author: 'Мастер участка', 
+        date: '06.11.2025', 
+        text: 'Назначена бригада, работы начнуться завтра' 
+    }
 ])
 
 const newComment = ref('')
-
 const addComment = () => {
     const text = newComment.value.trim()
     if (!text) return
@@ -153,15 +162,15 @@ const addComment = () => {
         date: new Date().toLocaleDateString('ru-RU'),
         text
     })
-    
     newComment.value = ''
 }
 
 // вложения
 const attachments = ref([
-    { id: 1, name: 'photo_before.jpg', type: 'image', size: '1.2 MB' },
-    { id: 2, name: 'scheme.pdf', type: 'pdf', size: '420 KB' }
+    { id: 1, name: 'poty.jpg', type: 'image', size: '1.2 MB' },
+    { id: 2, name: 'shema.pdf', type: 'pdf', size: '420 KB' }
 ])
+
 
 const newFiles = ref([])
 
@@ -173,9 +182,24 @@ const fileIcon = (type) => {
 
 // история
 const history = ref([
-    { id: 1, action: 'Создан дефект', date: '02.11.2025', author: 'Дарья Власова' },
-    { id: 2, action: 'Назначен ответственный: Иван Петров', date: '03.11.2025', author: 'Менеджер проекта' },
-    { id: 3, action: 'Статус изменён: Новая на В работе', date: '05.11.2025', author: 'Инженер технадзора' }
+    { 
+        id: 21,
+        action: 'Создан дефект', 
+        date: '02.11.2025', 
+        author: 'Дарья Власова' 
+    },
+    { 
+        id: 22,
+        action: 'Назначен ответственный - Иван Петров', 
+        date: '03.11.2025', 
+        author: 'Менеджер проекта' 
+    },
+    { 
+        id: 23,
+        action: 'Статус изменён - Новая на В работе', 
+        date: '05.11.2025', 
+        author: 'Инженер технадзора' 
+    },
 ])
 </script>
 
@@ -183,6 +207,7 @@ const history = ref([
 .details-page {
     min-height: 100vh;
     background-color: rgb(var(--v-theme-background));
+    color: rgb(var(--v-theme-on-background));
     display: flex;
     justify-content: center;
     padding: 32px 16px 64px;
@@ -209,7 +234,7 @@ header {
 
 .header-title {
     line-height: 1.2;
-    font-weight: 600;
+    font-weight: 700;
 }
 
 /* мейн */
