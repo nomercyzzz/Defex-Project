@@ -7,7 +7,7 @@
                 <v-form ref="form" @submit="onSubmit">
                     <!-- инпуты -->
                     <v-text-field
-                        v-model="login"
+                        v-model="data.login"
                         type="text"
                         :rules="loginRules"
                         label="Логин"
@@ -21,7 +21,7 @@
                         clearable
                     />
                     <v-text-field
-                        v-model="email"
+                        v-model="data.email"
                         type="email"
                         :rules="emailRules"
                         label="Почта"
@@ -35,7 +35,7 @@
                         clearable
                     />
                     <v-text-field
-                        v-model="password"
+                        v-model="data.password"
                         :rules="passwordRules"
                         :type="showPassword ? 'text' : 'password'"
                         :append-inner-icon="showPassword ? 'mdi-eye-outline' : 'mdi-eye-off-outline'"
@@ -50,7 +50,7 @@
                         rounded="lg"
                     />
                     <v-select
-                        v-model="role"
+                        v-model="data.role"
                         :rules="roleRules"
                         label="Роль в системе"
                         variant="outlined"
@@ -76,30 +76,37 @@
                         rounded="lg"
                         type="submit"
                         :loading="loading"
-                    >Создать аккаунт</v-btn>
+                    >Зарегистрироваться</v-btn>
                     <!-- низ -->
                     <p class="bottom-text">
                         Уже есть аккаунт?
                         <a class="accent-link">Войти</a>
                     </p>
                 </v-form>
+                
             </div>
         </v-fade-transition>
+
+        <!-- снекбары -->
+        <SnackbarOk :message="snackbarOk"/>
+        <snackbar-error :message="snackbarError"/>
+
     </div>
 </template>
 
 <script setup>
 import { ref } from 'vue'
+import axios from 'axios'
+import { useRouter } from 'vue-router'
+
+const router = useRouter();
+
+import SnackbarOk from '../components/snackbarOk.vue'
+import SnackbarError from '../components/snackbarError.vue'
 
 // флаг для показа пароля
 const showPassword = ref(false)
 const form = ref(null)
-
-// получение данных из инпутов 
-const login = ref('')
-const email = ref('')
-const password = ref('')
-const role = ref(null)
 
 // валидация
 const loginRules = [
@@ -124,8 +131,18 @@ const passwordRules = [
 const roleRules = [
     v => !!v || 'Выберите роль в системе'
 ]
-// флаг загрузки
+// флаг загрузки кнопки
 const loading = ref(false)
+// сообщение для алерта + тип алерта 
+const snackbarError = ref('')
+const snackbarOk = ref('')
+
+const data = ref({
+    login: '',
+    email: '',
+    password: '',
+    role: null
+})
 
 const onSubmit = async (event) => {
     event.preventDefault()
@@ -135,11 +152,18 @@ const onSubmit = async (event) => {
     loading.value = true
     
     try {
-        console.log('форма отпр', {
-        логин: login.value,
-        почта: email.value,
-        роль: role.value,
-        пароль: password.value})
+        const response = await axios.post('/api/registration', data.value);
+        snackbarOk.value = response.data.message
+        setTimeout(() => {
+            router.push('/home')
+        }, 4000)
+
+    } catch (error) {    
+        snackbarError.value = error.response.data.message
+        setTimeout(() => {
+            snackbarError.value = ''
+        }, 4000)
+
     } finally {
         loading.value = false
     }

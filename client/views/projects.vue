@@ -42,10 +42,10 @@
             <v-btn
               color="primary"
               variant="tonal"
-              rounded="lg"
-              size="44"              
-              icon="mdi-account-circle-outline"
-            />
+              rounded="lg"          
+              prepend-icon="mdi-account-circle-outline"
+              size="large"
+            > Профиль </v-btn>
           </div>
       </header>
 
