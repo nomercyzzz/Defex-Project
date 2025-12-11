@@ -7,8 +7,8 @@
                     <v-form ref="form" @submit="onSubmit">
                         <!-- инпуты -->
                         <v-text-field
-                            v-model="loginORemail"
-                            :rules="loginORemailRules"
+                            v-model="data.loginOrEmail"
+                            :rules="loginOrEmailRules"
                             type="text"
                             label="Логин или Почта"
                             variant="outlined"
@@ -21,7 +21,7 @@
                             clearable
                         />
                         <v-text-field
-                            v-model="password"
+                            v-model="data.password"
                             :rules="passwordRules"
                             :type="showPassword ? 'text' : 'password'"
                             label="Пароль"
@@ -49,26 +49,35 @@
                 <!-- низ -->
                 <p class="bottom-text">
                     Нет аккаунта?
-                    <a class="accent-link">Зарегистрироваться</a>
+                    <a class="accent-link" @click="goRegistration">Зарегистрироваться</a>
                 </p>
             </div>
         </v-fade-transition>
+
+        <!-- снекбары -->
+        <SnackbarOk :message="snackbarOk"/>
+        <snackbar-error :message="snackbarError"/>
     </div>
 </template>
 
 <script setup>
 import { ref } from 'vue'
+import axios from 'axios'
+import SnackbarOk from '../components/snackbarOk.vue'
+import SnackbarError from '../components/snackbarError.vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter();
+const goRegistration = () => {
+    router.push('/registration')
+} 
 
 // флаг для показа пароля
 const showPassword = ref(false)
 const form = ref(null)
 
-// получение данных из инпутов 
-const loginORemail = ref('')
-const password = ref('')
-
 // валидация
-const loginORemailRules = [
+const loginOrEmailRules = [
     v => !!v || 'Введите логин или почту'
 ]
 const passwordRules = [
@@ -76,6 +85,17 @@ const passwordRules = [
 ]
 // флаг загрузки
 const loading = ref(false)
+
+
+// снекбары с ответом сервера
+const snackbarError = ref('')
+const snackbarOk = ref('')
+
+const data = ref({
+    loginOrEmail: '',
+    password: ''
+})
+
 
 const onSubmit = async (event) => {
     event.preventDefault()
@@ -85,9 +105,18 @@ const onSubmit = async (event) => {
     loading.value = true
     
     try {
-        console.log('форма отпр', {
-        'логин или почта': loginORemail.value,
-        пароль: password.value})
+        const response = await axios.post('/api/login', data.value);
+        snackbarOk.value = response.data.message
+        setTimeout(() => {
+            router.push('/home')
+        }, 4000)
+
+    } catch (error) {    
+        snackbarError.value = error.response.data.message
+        setTimeout(() => {
+            snackbarError.value = ''
+        }, 4000)
+
     } finally {
         loading.value = false
     }

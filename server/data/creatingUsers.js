@@ -33,7 +33,6 @@ export default async function creatingUsers(login, email, password, role) {
             user: {
                 id: user.insertedId,
                 login,
-                email,
                 role
             }
         }

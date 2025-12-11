@@ -8,7 +8,7 @@
         rounded="lg"
         >
         <div class="d-flex align-center">
-            <v-icon icon="mdi-check-circle-outline" class="mr-2"/>
+            <v-icon icon="mdi-check-circle-outline" size="30" class="mr-2"/>
             <p>{{ message }}</p>
         </div>
     </v-snackbar>
@@ -21,4 +21,8 @@
         }
     })
 </script>
-
+<style scoped>
+    p {
+        font-size: 16px;
+    }
+</style>

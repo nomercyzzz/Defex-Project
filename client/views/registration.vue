@@ -80,7 +80,7 @@
                     <!-- низ -->
                     <p class="bottom-text">
                         Уже есть аккаунт?
-                        <a class="accent-link">Войти</a>
+                        <a class="accent-link" @click="goLogin">Войти</a>
                     </p>
                 </v-form>
                 
@@ -98,11 +98,13 @@
 import { ref } from 'vue'
 import axios from 'axios'
 import { useRouter } from 'vue-router'
-
-const router = useRouter();
-
 import SnackbarOk from '../components/snackbarOk.vue'
 import SnackbarError from '../components/snackbarError.vue'
+
+const router = useRouter();
+const goLogin = () => {
+    router.push('/login')
+}
 
 // флаг для показа пароля
 const showPassword = ref(false)
@@ -133,7 +135,8 @@ const roleRules = [
 ]
 // флаг загрузки кнопки
 const loading = ref(false)
-// сообщение для алерта + тип алерта 
+
+// снекбары с ответом сервера
 const snackbarError = ref('')
 const snackbarOk = ref('')
 
