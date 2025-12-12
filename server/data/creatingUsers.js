@@ -5,7 +5,7 @@ export default async function creatingUsers(login, email, password, role) {
     try {
         const db = await runDB();
         // достаем коллекцию users из базы данных
-        const users = await db.collection('users');
+        const users = db.collection('users');
 
         const checkEmail = await users.findOne({email});
         const checkLogin = await users.findOne({login});

@@ -1,5 +1,6 @@
 export function setAcccessTokenCookie(res, accessToken) {
     res.cookie('accessToken', accessToken, {
+        signed: true, // подпись куки
         httpOnly: true,
         maxAge: 15 * 60 * 1000, // 15 мин
         sameSite: 'lax',
@@ -9,6 +10,7 @@ export function setAcccessTokenCookie(res, accessToken) {
 
 export function setRefreshTokenCookie(res, refreshToken) {
     res.cookie('refreshToken', refreshToken, {
+        signed: true,
         httpOnly: true,
         maxAge: 30 * 24 * 60 * 60 * 1000, // 30 дней
         sameSite: 'lax',
