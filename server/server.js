@@ -176,4 +176,75 @@ app.delete('/api/projects/:code', async (req, res) => {
         res.status(500).json({ massage: 'Ошибка при удалении проекта' })
     }
 })
+
+// СТРАНИЦА ДЕФЕКТОВ
+app.get('/api/defects', async (req, res) => {
+    try {
+        const db = await runDB();
+        const { projectCode } = req.query; 
+        
+        const filter = projectCode ? { projectCode } : {};
+        
+        const defects = await db.collection('defects').find(filter).toArray();
+        const mapped = defects.map(d => ({ ...d, _id: d._id.toString() }));
+        res.status(200).json(mapped);
+    } catch (error) {
+        res.status(500).json({ message: 'Ошибка при загрузке дефектов' });
+    }
+});
+
+app.post('/api/defects', async (req, res) => {
+    try {
+        const db = await runDB();
+        const newDefect = req.body;
+        
+        
+        // дата
+        newDefect.dateAdded = new Date().toISOString().split('T')[0];
+        // вложения + коменты
+        newDefect.comments = 0;
+        newDefect.attachments = 0;
+
+        const result = await db.collection('defects').insertOne(newDefect);
+        
+        res.status(201).json({ 
+            message: 'Дефект создан', 
+            defect: { ...newDefect, _id: result.insertedId.toString() } 
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Ошибка при создании дефекта' });
+    }
+});
+
+
+
+app.put('/api/defects/:id', async (req, res) => {
+    try {
+        const db = await runDB();
+        const { _id, ...updates } = req.body;
+        
+        await db.collection('defects').updateOne({ id: req.params.id }, { $set: updates });
+        
+
+        res.status(200).json({ message: 'Дефект обновлен' });
+    } catch (error) {
+        res.status(500).json({ message: 'Ошибка обновления' });
+    }
+});
+
+app.delete('/api/defects/:id', async (req, res) => {
+    try {
+        const db = await runDB();
+        const mongoId = req.params.id;
+
+        await db.collection('defects').deleteOne({ _id: new ObjectId(mongoId) });
+
+        res.status(200).json({ message: 'Дефект удален' });
+    } catch (error) {
+        
+        res.status(500).json({ message: 'Ошибка удаления' });
+    }
+});
+
 app.listen(5000, () => console.log('Сервер запущен, порт 5000'))

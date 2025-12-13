@@ -5,12 +5,16 @@ import { useAuthStore } from '../store/auth.js'
 import login from '../views/login.vue'
 import reg from '../views/registration.vue'
 import home from '../views/projects.vue'
+import defects from '../views/defects.vue'
+import report from '../views/report.vue'
 const router = createRouter({
     history: createWebHashHistory(),
     routes: [
         { path: '/login', component: login },
         { path: '/registration', component: reg},
         { path: '/home', component: home},
+        { path: '/projects/:code/defects', component: defects },
+        { path: '/report', component: report},
         { path: '/', component: home },
         // любой непонятный машрут редиктит на главную страницу
         { path: '/:pathMatch(.*)*', redirect: '/home' },

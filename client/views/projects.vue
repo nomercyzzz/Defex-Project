@@ -218,6 +218,7 @@
                   prepend-icon="mdi-open-in-new"
                   rounded="lg"
                   height="36"
+                  @click="router.push(`/projects/${project.code}/defects`)"
                 >
                   Открыть
                 </v-btn>
@@ -236,6 +237,7 @@
 
 <script setup>
 import { computed, ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '../store/auth.js'
 import projectAdd from '../components/projectAdd.vue'
 import projectEdit from '../components/projectEdit.vue'
@@ -244,6 +246,7 @@ import SnackbarError from '../components/snackbarError.vue'
 
 import axios from 'axios'
 
+const router = useRouter();
 const authStore = useAuthStore();
 
 onMounted(async () => {

@@ -1,11 +1,30 @@
 <template>
   <div class="defects-page">
     <div class="defects-wrapper">
+      <defectAdd
+        v-if="canCreateDefect"
+        v-model="showAddDialog"
+        :loading="saving"
+        @save="onSaveNewDefect"
+      />
+
+      <defectEdit
+        v-if="canEditDefect"
+        v-model="showEditDialog"
+        :defect="editingDefect"
+        :loading="saving"
+        @save="onSaveEditDefect"
+        @delete="onDeleteDefect"
+      />
+      <!-- снекбары -->
+      <SnackbarOk :message="snackbarOk"/>
+      <SnackbarError :message="snackbarError"/>
+
       <header>
         <div class="header-info">
           <div class="header-title">
             <v-icon icon="mdi-clipboard-text-outline" color="primary" size="40" />
-              <h1 class="header-eyebrow">Журнал дефектов · OB-001</h1>
+              <h1 class="header-eyebrow">Журнал дефектов · {{ projectCode }}</h1>
           </div>
 
           <div class="header-chips">
@@ -26,10 +45,12 @@
 
         <div class="header-buttons">
           <v-btn
+            v-if="canCreateDefect"
             color="primary"
             prepend-icon="mdi-plus"
             rounded="lg"
             size="large"
+            @click="openAddDialog"
           >
             Новый дефект
           </v-btn>
@@ -107,7 +128,7 @@
         <section class="defects" v-if="filteredDefects.length">
           <v-card
             v-for="defect in filteredDefects"
-            :key="defect.id"
+            :key="defect._id"
             class="defect-card"
             :class="`status-${colorStatus(defect.status)}`"
             color="surface"
@@ -121,15 +142,29 @@
                 </p>
               </div>
 
-              <v-chip
-                :color="colorStatus(defect.status)"
-                label
-                size="small"
-                variant="tonal"
-                prepend-icon="mdi-progress-check"
-              >
-                {{ defect.status }}
-              </v-chip>
+              <div class="d-flex flex-column align-end ">
+                <v-chip
+                  :color="colorStatus(defect.status)"
+                  label
+                  size="small"
+                  variant="tonal"
+                  prepend-icon="mdi-progress-check"
+                >
+                  {{ defect.status }}
+                </v-chip>
+
+                <v-btn 
+                  v-if="canEditDefect"
+                  variant="text"
+                  lebal
+                  size="small"
+                  color="secondary"
+                  prepend-icon="mdi-pencil-outline"
+                  class="mt-1"
+                  density="comfortable"
+                  @click="openEditDialog(defect)"
+                > Ред. </v-btn> 
+              </div>
             </div>
 
             <div class="card-info">
@@ -188,118 +223,135 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import axios from 'axios'
+import { useAuthStore } from '../store/auth.js'
 
-const defects = ref([
-  {
-    id: 'DF-001',
-    location: 'Подъезд 1, этаж 12',
-    title: 'Неровная шпаклёвка стен в гостиной',
-    status: 'Новая',
-    priority: 'Высокий',
-    responsible: 'Иван Петров',
-    author: 'Дарья Власова',
-    deadline: '2025-11-10',
-    comments: 3,
-    attachments: 2,
-  },
-  {
-    id: 'DF-002',
-    location: 'Квартира 1204',
-    title: 'Зазор между плинтусом и стеной',
-    status: 'В работе',
-    priority: 'Средний',
-    responsible: 'Олег Смирнов',
-    author: 'Инженер технадзора',
-    deadline: '2025-11-15',
-    comments: 1,
-    attachments: 1,
-  },
-  {
-    id: 'DF-003',
-    location: 'Квартира 1207',
-    title: 'Неплотное примыкание двери к коробке',
-    status: 'На проверке',
-    priority: 'Низкий',
-    responsible: 'Иван Петров',
-    author: 'Мастер участка',
-    deadline: '2025-11-18',
-    comments: 2,
-    attachments: 1,
-  },
-  {
-    id: 'DF-004',
-    location: 'Щитовая 1',
-    title: 'Перепутана маркировка автоматических выключателей',
-    status: 'Новая',
-    priority: 'Высокий',
-    responsible: 'Иван Петров',
-    author: 'Инженер ПТО',
-    deadline: '2025-11-20',
-    comments: 0,
-    attachments: 2,
-  },
-  {
-    id: 'DF-005',
-    location: 'Лифт. холл, 10 этаж',
-    title: 'Следы от краски на керамограните',
-    status: 'В работе',
-    priority: 'Средний',
-    responsible: 'Олег Смирнов',
-    author: 'Инженер технадзора',
-    deadline: '2025-11-22',
-    comments: 4,
-    attachments: 3,
-  },
-  {
-    id: 'DF-006',
-    location: 'Квартира 1103',
-    title: 'Царапины на остеклении лоджии',
-    status: 'На проверке',
-    priority: 'Высокий',
-    responsible: 'Иван Петров',
-    author: 'Заказчик',
-    deadline: '2025-11-25',
-    comments: 3,
-    attachments: 4,
-  },
-  {
-    id: 'DF-007',
-    location: 'Квартира 903',
-    title: 'Неправильный уклон плитки к трапу',
-    status: 'Закрыта / Отмена',
-    priority: 'Высокий',
-    responsible: 'Иван Петров',
-    author: 'Технадзор',
-    deadline: '2025-10-30',
-    comments: 2,
-    attachments: 2,
-  },
-  {
-    id: 'DF-008',
-    location: 'Этаж 8',
-    title: 'Разность оттенков краски на стенах',
-    status: 'Закрыта / Отмена',
-    priority: 'Низкий',
-    responsible: 'Иван Петров',
-    author: 'Заказчик',
-    deadline: '2025-11-01',
-    comments: 1,
-    attachments: 1,
-  },
-  {
-    id: 'DF-101',
-    location: 'Парковочное место P-27',
-    title: 'Подтекание воды по шву перекрытия',
-    status: 'В работе',
-    priority: 'Высокий',
-    responsible: 'Игорь Михайлов',
-    author: 'Технадзор',
-    deadline: '2025-11-20',
-    comments: 4,
-    attachments: 3,
-  },
-])
+import defectAdd from '../components/defectAdd.vue' 
+import defectEdit from '../components/defectEdit.vue'
+import SnackbarOk from '../components/snackbarOk.vue'
+import SnackbarError from '../components/snackbarError.vue'
+
+const authStore = useAuthStore();
+const route = useRoute();
+// получаем код проекта
+const projectCode = route.params.code;
+
+const defects = ref([]);
+
+const saving = ref(false);
+const showAddDialog = ref(false)
+const showEditDialog = ref(false)
+const editingDefect = ref(null)
+
+const snackbarOk = ref('')
+const snackbarError = ref('')
+// скрытие кнопой 
+const canCreateDefect = computed(() => authStore.isManager || authStore.isEngineer)
+const canEditDefect = computed(() => authStore.isManager || authStore.isEngineer)
+
+// открытие диалогов
+const openAddDialog = () => { 
+  showAddDialog.value = true;
+}
+
+const openEditDialog = (defect) => {
+    editingDefect.value = defect;
+    showEditDialog.value = true;
+}
+
+const clearErrorSnackbar = () => {
+  setTimeout(() => { 
+    snackbarError.value = '' 
+  }, 4000)
+}
+const clearOkSnackbar = () => { 
+  setTimeout(() => { 
+    snackbarOk.value = '' 
+  }, 4000) }
+
+
+onMounted(async() => {
+  try {
+    const response = await axios.get('/api/defects', { params: { projectCode: projectCode }  })
+    defects.value = response.data;
+
+    console.log('дефекты загружены')
+  } catch(error){
+    console.log('ошибка загрузки дефектов', error)
+  }
+})
+
+
+const onSaveNewDefect = async (formPayload) => {
+  saving.value = true
+  try {
+    const newDefect = {
+      ...formPayload,
+      projectCode: projectCode
+    }
+
+    const response = await axios.post('/api/defects', newDefect)
+    
+    defects.value.push(response.data.defect)
+
+    snackbarOk.value = response.data.message;
+    clearOkSnackbar()
+
+    saving.value = false;
+    showAddDialog.value = false;
+
+  } catch (error) {
+    snackbarError.value = error.response.data.message;
+    clearErrorSnackbar()
+
+    saving.value = false;
+    showAddDialog.value = false;
+  }
+}
+
+const onSaveEditDefect = async (updatedDefect) => {
+  saving.value = true
+  try {
+    const response = await axios.put(`/api/defects/${updatedDefect._id}`, updatedDefect)
+    
+    const index = defects.value.findIndex(d => d._id === updatedDefect._id)
+    if (index !== -1) defects.value[index] = { ...updatedDefect }
+
+    snackbarOk.value = response.data.message;
+    clearOkSnackbar()
+
+    saving.value = false;
+    showEditDialog.value = false;
+
+  } catch (error) {
+    snackbarError.value = error.response.data.message;
+    clearErrorSnackbar();
+
+    saving.value = false;
+    showEditDialog.value = false
+  }
+}
+
+const onDeleteDefect = async (mongoId) => {
+  try {
+    
+    const response = await axios.delete(`/api/defects/${mongoId}`)
+    defects.value = defects.value.filter(d => d._id !== mongoId)
+
+    snackbarOk.value = response.data.message;
+    clearOkSnackbar()
+
+    showEditDialog.value = false
+  } catch (error) {
+
+    snackbarError.value = error.response.data.message;
+    clearErrorSnackbar()
+
+  }
+}
+
 // функция для получения цвета
 const colorStatus = (status) => {
   return status === 'Новая' || status === 'В работе' ? 'primary' : 'secondary';

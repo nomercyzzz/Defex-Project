@@ -11,6 +11,7 @@ export const useAuthStore = defineStore('auth', () => {
     const isAuthorized = computed(() => !!user.value)
     const role = computed(() => user.value?.role || 'observer')
     const isManager = computed(() => role.value === 'manager')
+    const isEngineer = computed(() => role.value === 'engineer')
     
     //функция для проверки авторизации
     async function checkAuth() {
@@ -46,8 +47,9 @@ export const useAuthStore = defineStore('auth', () => {
         user, 
         role, 
         isManager, 
+        isEngineer,
         isAuthorized, 
-        isLoading, 
+        isLoading,
         checkAuth,
         setUser
     }
