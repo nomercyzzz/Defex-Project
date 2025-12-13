@@ -46,7 +46,7 @@ app.post('/api/refresh', async (req, res) => {
             return res.status(401).json({ error: 'Пользователь не найден, неверный решфреш токен'})
         }
         const newAccessToken = tokenAccessGenerate({
-            id: user.id,
+            id: user._id,
             login: user.login,
             role: user.role
         });
@@ -94,7 +94,14 @@ app.post('/api/registration', async (req, res) => {
     setAcccessTokenCookie(res, accessToken);
     setRefreshTokenCookie(res, refreshToken);
 
-    return res.status(201).json({ message: result.message })
+    return res.status(201).json({ 
+        message: result.message,
+        user: {
+            id: user.id,
+            login: user.login,
+            role: user.role
+        }
+    })
 })
 
 app.post('/api/login', async (req, res) => {
@@ -120,7 +127,53 @@ app.post('/api/login', async (req, res) => {
     setAcccessTokenCookie(res, accessToken);
     setRefreshTokenCookie(res, refreshToken);
 
-    return res.status(200).json({ message: result.message })
+    return res.status(201).json({ 
+        message: result.message,
+        user: {
+            id: user.id,
+            login: user.login,
+            role: user.role
+        }
+    })
 
+})
+
+app.get('/api/projects', async (req, res) => {
+    const db = await runDB();
+    const projects = await db.collection('projects').find().toArray();
+    return res.status(200).json(projects);
+})
+app.post('/api/projects', async (req, res) => {
+    try {
+        const db = await runDB();
+        const newProject = req.body;
+        await db.collection('projects').insertOne(newProject);
+        return res.status(201).json({ message: 'Проект успешно создан'});
+    } catch (error) {
+        return res.status(500).json({ message: 'Ошибка при создании проекта'})
+    }
+})
+
+app.put('/api/projects/:code', async (req, res) => {
+    try {
+        const db = await runDB();
+        // убираем _id из обновления
+        const { _id, ...updates } = req.body;
+        await db.collection('projects').updateOne({ code: req.params.code }, { $set: updates });
+        return res.status(200).json({ message: 'Проект успешно обновлен'})
+    } catch (error) {
+        res.status(500).json({ massage: 'Ошибка при обновлении проекта' })
+    }
+})
+
+app.delete('/api/projects/:code', async (req, res) => {
+    try {
+        const db = await runDB();
+        await db.collection('projects').deleteOne({ code: req.params.code });
+        
+        return res.status(200).json({ message: 'Проект успешно удален'})
+    } catch (error) {
+        res.status(500).json({ massage: 'Ошибка при удалении проекта' })
+    }
 })
 app.listen(5000, () => console.log('Сервер запущен, порт 5000'))

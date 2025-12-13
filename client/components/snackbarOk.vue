@@ -3,7 +3,6 @@
         :model-value="Boolean(message)"
         timeout="4000"
         color="primary"
-        variant="tonal"
         min-width="0"
         rounded="lg"
         >

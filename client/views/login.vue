@@ -66,7 +66,9 @@ import axios from 'axios'
 import SnackbarOk from '../components/snackbarOk.vue'
 import SnackbarError from '../components/snackbarError.vue'
 import { useRouter } from 'vue-router'
+import { useAuthStore } from '../store/auth.js'
 
+const authStore = useAuthStore();
 const router = useRouter();
 const goRegistration = () => {
     router.push('/registration')
@@ -106,6 +108,10 @@ const onSubmit = async (event) => {
     
     try {
         const response = await axios.post('/api/login', data.value);
+
+        // запись в стор пользователя 
+        authStore.setUser(response.data.user)
+
         snackbarOk.value = response.data.message
         setTimeout(() => {
             router.push('/home')

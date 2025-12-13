@@ -2,11 +2,14 @@ import { createApp } from 'vue'
 import App from './app.vue'
 import router from './router/index.js'
 import { createVuetify } from 'vuetify'
+import { createPinia } from 'pinia'
 
 import '@mdi/font/css/materialdesignicons.css'
 import 'vuetify/styles'
 
 const app = createApp(App) 
+const pinia = createPinia()
+
 const vuetify = createVuetify({
     theme: {
         defaultTheme: 'dark',
@@ -25,7 +28,7 @@ const vuetify = createVuetify({
         }
     }
 })
-
+app.use(pinia)
 app.use(router)
 app.use(vuetify)
 app.mount('#app')

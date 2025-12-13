@@ -1,6 +1,23 @@
 ﻿<template>
   <div class="projects-page">
     <div class="projects-wrapper">
+      <projectAdd
+        v-model="showAddDialog" 
+        :loading="saving" 
+        @save="onSaveNewProject"
+      />
+
+      <projectEdit
+          v-model="showEditDialog" 
+          :project="editingProject" 
+          :loading="saving" 
+          @save="onSaveEditProject" 
+          @delete="onDeleteProject" 
+      />
+      <!-- снекбары -->
+      <SnackbarOk :message="snackbarOk"/>
+      <SnackbarError :message="snackbarError"/>
+        
       <header>
           <div class="header-info">
             <div class="header-title">
@@ -36,7 +53,14 @@
           </div>
 
           <div class="header-buttons">
-            <v-btn color="primary" prepend-icon="mdi-plus" rounded="lg" size="large" >
+            <v-btn
+              v-if="authStore.isManager"
+              color="primary"
+              prepend-icon="mdi-plus" 
+              rounded="lg" 
+              size="large"
+              @click="openAddDialog"
+              >
               Новый проект
             </v-btn>
             <v-btn
@@ -103,30 +127,51 @@
               clearable
             />
         </section>
-
-        <section class="projects" v-if="filteredProjects.length">
+        
+          <transition-group
+            name="list"
+            appear
+            tag="section"
+            class="projects"
+            v-if="filteredProjects.length"
+          >
             <v-card 
               class="project-card"
               :class="`status-${colorStatus(project.status)}`"
-              color="surface" 
-              rounded="xl" 
-              v-for="project in filteredProjects" 
+              color="surface"
+              rounded="xl"
+              v-for="(project, index) in filteredProjects" 
               :key="project.code"
+              :style="{ '--i': index }"
             >
               <div class="card">
                 <div>
                   <p class="card-stage">{{ project.stage }}</p>
                   <h2 class="card-name">{{ project.name }}</h2>
                 </div>
-                <v-chip
-                  :color="colorStatus(project.status)"
-                  label
-                  size="small"
-                  variant="tonal"
-                  prepend-icon="mdi-progress-check"
-                >
-                  {{ project.status }}
-                </v-chip>
+                <div class="d-flex flex-column align-end ">
+                  <v-chip
+                    :color="colorStatus(project.status)"
+                    label
+                    size="small"
+                    variant="tonal"
+                    prepend-icon="mdi-progress-check"
+                  >
+                    {{ project.status }}
+                  </v-chip>
+
+                  <v-btn 
+                    v-if="authStore.isManager"
+                    variant="text"
+                    lebal
+                    size="small"
+                    color="secondary"
+                    prepend-icon="mdi-pencil-outline"
+                    class="mt-1"
+                    density="comfortable"
+                    @click="openEditDialog(project) "
+                    > Ред. </v-btn> 
+                </div>
               </div>
 
               <div class="card-info">
@@ -178,7 +223,7 @@
                 </v-btn>
               </div>
             </v-card>
-        </section>
+          </transition-group >
         <section v-else class="zero-projects">
           <v-icon size="64" icon="mdi-folder-open-outline" color="secondary"/>
             <p class="zero-title">Нет проектов</p>
@@ -190,62 +235,118 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
+import { useAuthStore } from '../store/auth.js'
+import projectAdd from '../components/projectAdd.vue'
+import projectEdit from '../components/projectEdit.vue'
+import SnackbarOk from '../components/snackbarOk.vue'
+import SnackbarError from '../components/snackbarError.vue'
 
-const projects = ref([
-  {
-    code: 'OB-001',
-    name: 'ЖК "Северный квартал"',
-    stage: 'Корпус A - отделка и инженерка',
-    status: 'В работе' ,
-    location: 'Москва, Лианозово',
-    deadline: '2025-11-12',
-    manager: 'Дарья Власова',
-    progress: 72,
-    defectsOpen: 5,
-    defectsClosed: 18,
-    priority: 'Средний'
-  },
-  {
-    code: 'BC-002',
-    name: 'БЦ "Нева Плаза"',
-    stage: 'Паркинг и фасады',
-    status: 'На проверке',
-    location: 'Санкт-Петербург, Петроградская',
-    deadline: '2026-01-23',
-    manager: 'Игорь Михайлов',
-    progress: 64 ,
-    defectsOpen: 7,
-    defectsClosed: 25,
-    priority: 'Высокий'
-  },
-  {
-    code: 'TRK-003',
-    name: 'ТРК "Каскад"',
-    stage: 'Торговая галерея',
-    status: 'Новая',
-    location: 'Екатеринбург, центр',
-    deadline: '2026-01-20',
-    manager: 'Полина Орлова',
-    progress: 38,
-    defectsOpen: 9,
-    defectsClosed: 11,
-    priority: 'Средний'
-  },
-  {
-    code: 'JK-004',
-    name: 'ЖК "Южный берег"',
-    stage: 'Благоустройство и подъезды',
-    status: 'В работе',
-    location: 'Сочи, Хоста',
-    deadline: '2026-01-01',
-    manager: 'Андрей Козлов',
-    progress: 81,
-    defectsOpen: 3,
-    defectsClosed: 29,
-    priority: 'Низкий'
-  },
-])
+import axios from 'axios'
+
+const authStore = useAuthStore();
+
+onMounted(async () => {
+  try {
+    const response = await axios.get('/api/projects')
+    projects.value = response.data
+  } catch (error) {
+    console.log('Ошибка при получении проектов:', error)
+    projects.value = []
+  }
+})
+
+const projects = ref([]);
+// состояние диалогов для добавления и редактирования 
+const showAddDialog = ref(false)
+const showEditDialog = ref(false)
+const editingProject = ref(null)
+const saving = ref(false)
+// снекбары если ошибка 
+const snackbarError = ref('')
+const snackbarOk = ref('')
+
+// функции для очистки снекбара 
+const clearErrorSnackbar = () => {
+    setTimeout(() => {
+        snackbarError.value = ''
+    }, 4000)
+}
+const clearOkSnackbar = () => {
+  setTimeout(() => {
+        snackbarOk.value = ''
+    }, 4000)
+}
+const openAddDialog = () => {
+  showAddDialog.value = true;
+}
+const openEditDialog = (project) => {
+  // берем данные проекта в ред
+  editingProject.value = project;
+  showEditDialog.value = true;
+} 
+// сохранение нового проекта 
+const onSaveNewProject = async(newProject) => {
+  saving.value = true;
+  try {
+    const response = await axios.post('/api/projects', newProject);
+    projects.value.push(newProject);
+
+    snackbarOk.value = response.data.message;
+    clearOkSnackbar();
+
+    saving.value = false;
+    showAddDialog.value = false;
+  } catch (error) {
+    snackbarError.value = error.response.data.message;
+    clearErrorSnackbar();
+    
+    saving.value = false;
+  }
+}
+
+const onSaveEditProject = async(updateProject) => {
+  saving.value = true;
+  try {
+    const response = await axios.put(`/api/projects/${updateProject.code}`, updateProject);
+    const index = projects.value.findIndex(p => p.code === updateProject.code);
+
+    if (index !== -1) {
+      projects.value[index] = updateProject;
+    }
+
+      snackbarOk.value = response.data.message;
+      clearOkSnackbar();
+
+      saving.value = false;
+      showEditDialog.value = false;
+    
+    } catch (error) {
+      snackbarError.value = error.response.data.message;
+      clearErrorSnackbar();
+
+      saving.value = false;
+    }
+  }
+
+const onDeleteProject = async (code) => {
+  try {
+    const response = await axios.delete(`/api/projects/${code}`)
+    projects.value = projects.value.filter(p => p.code !== code) 
+
+    snackbarOk.value = response.data.message;
+    clearOkSnackbar();
+
+    showEditDialog.value = false
+
+    } catch(error) { 
+      snackbarError.value = error.response.data.message;
+      clearErrorSnackbar();
+
+      saving.value = false;
+    }
+}
+
 // функция для получения цвета
 const colorStatus = (status) => {
   return status === 'Новая' || status === 'В работе' ? 'primary' : 'secondary';
@@ -541,6 +642,41 @@ main {
 .header-chips :deep(.v-chip:hover) {
   transform: translateY(-2px);
 }
+
+/* анимация карточек */
+projects {
+  position: relative;
+}
+/* работает только при входе - используем переменную индекса */
+.list-enter-active {
+  transition: all 0.4s ease-out;
+  transition-delay: calc(var(--i) * 100ms);
+}
+
+/* исчезновение */
+.list-leave-active {
+  transition: all 0.4s ease-out;
+
+  position: absolute; 
+  z-index: -1;
+}
+
+/* начальное, конечное состояние) */
+.list-enter-from, .list-leave-to {
+  opacity: 0;
+  transform: translateY(30px);
+}
+
+/* сортировка */
+.list-move {
+  transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+  transition-delay: 0s !important; 
+}
+/* отключаем transition самой карточки во время сортировки, чтобы управлял только transition-group */
+.list-move .project-card {
+  transition: none !important;
+}
+
 /* сообщение об отсутсвие проектов */
 .zero-projects {
   padding: 48px;

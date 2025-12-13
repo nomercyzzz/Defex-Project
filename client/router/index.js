@@ -1,6 +1,6 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 
-import axios from 'axios'
+import { useAuthStore } from '../store/auth.js'
 
 import login from '../views/login.vue'
 import reg from '../views/registration.vue'
@@ -20,30 +20,21 @@ const router = createRouter({
 const acceptablePages = ['/login', '/registration'];
 
 router.beforeEach(async (to, from, next) => {
+    const authStore = useAuthStore();
+
     if (acceptablePages.includes(to.path)) {
         return next();
     }
-
-    try { 
-        await axios.get('/api/check-auth')
-        
-        return next()
-    } catch (error) {
-        // елси ошибка не связана с авторизацией или нет ответа с сервера, кидаем на логин 
-        if (!error.response || error.response.status !== 401) {
-            return next('/login')
-        }
-        try {
-            await axios.post('/api/refresh')
-            await axios.get('/api/check-auth')
-
-            return next()
-        } catch {
-            // если асес токен не обновился кидаем на страницу логина
-            return next('/login')
-        }
-
+    
+    if ( authStore.isAuthorized ) {
+        return next();
     }
+    // если не авторизован, запускам проверку авторизации
+    await authStore.checkAuth();
+
+    if (authStore.isAuthorized) {
+        return next();
+    } else return next('/login');
 })
 
 export default router
