@@ -7,6 +7,7 @@ import reg from '../views/registration.vue'
 import home from '../views/projects.vue'
 import defects from '../views/defects.vue'
 import report from '../views/report.vue'
+import defectDetails from '../views/defectDetails.vue'
 const router = createRouter({
     history: createWebHashHistory(),
     routes: [
@@ -14,6 +15,7 @@ const router = createRouter({
         { path: '/registration', component: reg},
         { path: '/home', component: home},
         { path: '/projects/:code/defects', component: defects },
+        { path: '/defects/:id', component: defectDetails },
         { path: '/report', component: report},
         { path: '/', component: home },
         // любой непонятный машрут редиктит на главную страницу
@@ -27,12 +29,10 @@ router.beforeEach(async (to, from, next) => {
     const authStore = useAuthStore();
 
     if (acceptablePages.includes(to.path)) {
+        authStore.isLoading = false;
         return next();
     }
     
-    if ( authStore.isAuthorized ) {
-        return next();
-    }
     // если не авторизован, запускам проверку авторизации
     await authStore.checkAuth();
 

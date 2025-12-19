@@ -1,6 +1,6 @@
 <template>
     <div class="login-page">
-        <v-fade-transition appear>
+        <transition name="fade" appear>
             <div class="login-container">
                 <h1 class="title">Вход в аккаунт</h1>
                 <p class="subtitle">Введите данные для входа</p>
@@ -52,7 +52,7 @@
                     <a class="accent-link" @click="goRegistration">Зарегистрироваться</a>
                 </p>
             </div>
-        </v-fade-transition>
+        </transition>
 
         <!-- снекбары -->
         <SnackbarOk :message="snackbarOk"/>
@@ -219,5 +219,20 @@ const onSubmit = async (event) => {
 }
 :deep(.v-btn:active) {
     transform: scale(0.94);
+}
+
+.fade-enter-active,
+.fade-leave-active {
+    transition: all 0.4s ease-out; 
+}
+
+.fade-enter-from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.98); 
+}
+
+.fade-leave-to {
+    opacity: 0;
+    transform: scale(0.95); 
 }
 </style>

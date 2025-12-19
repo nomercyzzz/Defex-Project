@@ -137,29 +137,49 @@ app.post('/api/login', async (req, res) => {
     })
 
 })
+app.post('/api/logout', (req, res) => {
 
+    try {
+        res.clearCookie('accessToken');
+        res.clearCookie('refreshToken');
+
+        return res.status(200).json( { message :'Выход выполнен успешно' } );
+    } catch {
+        return res.status(500).json( { message: 'Ошибка при выходе' });
+    }
+});
 app.get('/api/projects', async (req, res) => {
-    const db = await runDB();
-    const projects = await db.collection('projects').find().toArray();
-    return res.status(200).json(projects);
+    try {
+        const db = await runDB();
+        const projects = await db.collection('projects').find().toArray();
+        return res.status(200).json(projects);
+    } catch {
+        res.status(500).json('Ошибка при загрузке проектов');
+    }
 })
 app.post('/api/projects', async (req, res) => {
     try {
         const db = await runDB();
         const newProject = req.body;
-        await db.collection('projects').insertOne(newProject);
-        return res.status(201).json({ message: 'Проект успешно создан'});
+        // добавлем данные с фронта, а после из переменной result берем _id который создал монго ( потом с помощью него будем обновлять)
+        const result = await db.collection('projects').insertOne(newProject);
+        
+
+        return res.status(201).json({ 
+            message: 'Проект успешно создан',
+            project: { ...newProject, _id: result.insertedId.toString() }
+        });
     } catch (error) {
         return res.status(500).json({ message: 'Ошибка при создании проекта'})
     }
 })
 
-app.put('/api/projects/:code', async (req, res) => {
-    try {
+app.put('/api/projects/:id', async (req, res) => {
+    try {   
         const db = await runDB();
         // убираем _id из обновления
         const { _id, ...updates } = req.body;
-        await db.collection('projects').updateOne({ code: req.params.code }, { $set: updates });
+        await db.collection('projects').updateOne({ _id: new ObjectId(req.params.id) }, { $set: updates });
         return res.status(200).json({ message: 'Проект успешно обновлен'})
     } catch (error) {
         res.status(500).json({ massage: 'Ошибка при обновлении проекта' })
@@ -169,7 +189,8 @@ app.put('/api/projects/:code', async (req, res) => {
 app.delete('/api/projects/:code', async (req, res) => {
     try {
         const db = await runDB();
-        await db.collection('projects').deleteOne({ code: req.params.code });
+        const code = req.params.code;
+        await db.collection('projects').deleteOne({ code });
         
         return res.status(200).json({ message: 'Проект успешно удален'})
     } catch (error) {
@@ -177,7 +198,7 @@ app.delete('/api/projects/:code', async (req, res) => {
     }
 })
 
-// СТРАНИЦА ДЕФЕКТОВ
+// страница дефектов
 app.get('/api/defects', async (req, res) => {
     try {
         const db = await runDB();
@@ -186,10 +207,10 @@ app.get('/api/defects', async (req, res) => {
         const filter = projectCode ? { projectCode } : {};
         
         const defects = await db.collection('defects').find(filter).toArray();
-        const mapped = defects.map(d => ({ ...d, _id: d._id.toString() }));
-        res.status(200).json(mapped);
-    } catch (error) {
-        res.status(500).json({ message: 'Ошибка при загрузке дефектов' });
+        
+        res.status(200).json(defects);
+    } catch {
+        res.status(500).json('Ошибка при загрузке дефектов');
     }
 });
 
@@ -198,12 +219,15 @@ app.post('/api/defects', async (req, res) => {
         const db = await runDB();
         const newDefect = req.body;
         
-        
-        // дата
-        newDefect.dateAdded = new Date().toISOString().split('T')[0];
         // вложения + коменты
-        newDefect.comments = 0;
-        newDefect.attachments = 0;
+        newDefect.comments = [];
+        newDefect.attachments = [];
+        newDefect.history = [{
+            id: Date.now(),
+            action: 'Создан дефект',
+            date: new Date().toLocaleDateString('ru-RU'),
+            author: newDefect.author || 'Менеджер'
+        }];
 
         const result = await db.collection('defects').insertOne(newDefect);
         
@@ -212,7 +236,6 @@ app.post('/api/defects', async (req, res) => {
             defect: { ...newDefect, _id: result.insertedId.toString() } 
         });
     } catch (error) {
-        console.error(error);
         res.status(500).json({ message: 'Ошибка при создании дефекта' });
     }
 });
@@ -224,7 +247,7 @@ app.put('/api/defects/:id', async (req, res) => {
         const db = await runDB();
         const { _id, ...updates } = req.body;
         
-        await db.collection('defects').updateOne({ id: req.params.id }, { $set: updates });
+        await db.collection('defects').updateOne({ _id: new ObjectId(req.params.id) }, { $set: updates });
         
 
         res.status(200).json({ message: 'Дефект обновлен' });
@@ -236,14 +259,123 @@ app.put('/api/defects/:id', async (req, res) => {
 app.delete('/api/defects/:id', async (req, res) => {
     try {
         const db = await runDB();
-        const mongoId = req.params.id;
+        const id = req.params.id;
 
-        await db.collection('defects').deleteOne({ _id: new ObjectId(mongoId) });
+        await db.collection('defects').deleteOne({ id });
 
         res.status(200).json({ message: 'Дефект удален' });
     } catch (error) {
         
         res.status(500).json({ message: 'Ошибка удаления' });
+    }
+});
+
+
+
+app.get('/api/defects/:id', async (req, res) => {
+    try {
+        const db = await runDB();
+        const defect = await db.collection('defects').findOne({ id: req.params.id });
+        return res.status(200).json(defect);
+    } catch {
+        res.status(500).json('Ошибка при загрузке комментариев, историй, вложений');
+    }
+});
+app.post('/api/defects/:id/files', async (req, res) => {
+    try {
+        const { files } = req.body; 
+        const user = req.user;
+        const defectId = req.params.id;
+
+        if (!files || !files.length) return res.status(400).json({ message: 'Нет данных о файлах' });
+
+        const attachments = files.map((f, index) => ({
+            id: Date.now() + index,
+            name: f.name,
+            type: f.type,
+            size: f.size
+        }));
+
+        const historyItem = {
+            id: Date.now() + 999,
+            action: `Загружено файлов: ${files.length} шт.`,
+            date: new Date().toLocaleDateString('ru-RU'),
+            author: user.login
+        };
+
+        const db = await runDB();
+        await db.collection('defects').updateOne(
+            { id: defectId },
+            { 
+                $push: { 
+                    attachments: { $each: attachments },
+                    history: historyItem
+                }
+            }
+        );
+
+        res.status(200).json({ message: 'Файлы добавлены', attachments, history: historyItem });
+    } catch (e) {
+        console.log(e);
+        res.status(500).json({ message: 'Ошибка при добавлении файлов' });
+    }
+});
+
+
+app.post('/api/defects/:id/comments', async (req, res) => {
+    try {
+        const { text } = req.body;
+        const user = req.user;
+        
+        const newComment = {
+            id: Date.now(),
+            author: user.login,
+            date: new Date().toLocaleDateString('ru-RU'),
+            text
+        };
+        const historyItem = {
+            id: Date.now() + 1,
+            action: `Коммент: ${text.substring(0, 15)}...`,
+            date: new Date().toLocaleDateString('ru-RU'),
+            author: user.login
+        };
+
+        const db = await runDB();
+        await db.collection('defects').updateOne(
+            { id: req.params.id },
+            { $push: { comments: newComment, history: historyItem } }
+        );
+
+        res.status(200).json({ comment: newComment, history: historyItem });
+    } catch (e) {
+        res.status(500).json({ message: 'Ошибка' });
+    }
+});
+
+app.put('/api/defects/:id/status', async (req, res) => {
+    try {
+        const { status } = req.body;
+        const user = req.user;
+        
+        const historyItem = {
+            id: Date.now(),
+            action: `Статус изменён на: ${status}`,
+            date: new Date().toLocaleDateString('ru-RU'),
+            author: user.login
+        };
+
+        const db = await runDB();
+        await db.collection('defects').updateOne(
+            { id: req.params.id },
+            { 
+                $set: { status: status },
+                $push: { history: historyItem }
+            }
+        );
+
+        res.status(200).json({ history: historyItem });
+    } catch (e) {
+        res.status(500).json({ message: 'Ошибка' });
     }
 });
 

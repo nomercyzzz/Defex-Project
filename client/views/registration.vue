@@ -1,6 +1,6 @@
 <template>
     <div class="register-page">
-        <v-fade-transition appear>
+        <transition name="fade" appear>
             <div class="register-container">
                 <h1 class="title">Регистрация</h1>
                 <p class="subtitle">Создайте аккаунт для работы в системе</p>
@@ -85,7 +85,7 @@
                 </v-form>
                 
             </div>
-        </v-fade-transition>
+        </transition>
 
         <!-- снекбары -->
         <SnackbarOk :message="snackbarOk"/>
@@ -271,4 +271,20 @@ const onSubmit = async (event) => {
 :deep(.v-btn:active) {
     transform: scale(0.94);
 }
+
+.fade-enter-active,
+.fade-leave-active {
+    transition: all 0.4s ease-out; 
+}
+
+.fade-enter-from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.98); 
+}
+
+.fade-leave-to {
+    opacity: 0;
+    transform: scale(0.95); 
+}
+
 </style>

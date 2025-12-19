@@ -1,230 +1,249 @@
 <template>
   <div class="defects-page">
-    <div class="defects-wrapper">
-      <defectAdd
-        v-if="canCreateDefect"
-        v-model="showAddDialog"
-        :loading="saving"
-        @save="onSaveNewDefect"
-      />
+    <transition name="fade" mode="out-in">
+      <div 
+        v-if="loading" 
+        key="loader"
+        class="d-flex justify-center align-center w-100" 
+        style="height: 100vh; position: fixed;"
+      >
+          <v-progress-circular indeterminate color="primary" size="64" />
+      </div>
+      <div v-else key="content" class="defects-wrapper">
+        <defectAdd
+          v-if="canCreateDefect"
+          v-model="showAddDialog"
+          :loading="saving"
+          @save="onSaveNewDefect"
+        />
 
-      <defectEdit
-        v-if="canEditDefect"
-        v-model="showEditDialog"
-        :defect="editingDefect"
-        :loading="saving"
-        @save="onSaveEditDefect"
-        @delete="onDeleteDefect"
-      />
-      <!-- снекбары -->
-      <SnackbarOk :message="snackbarOk"/>
-      <SnackbarError :message="snackbarError"/>
+        <defectEdit
+          v-if="canEditDefect"
+          v-model="showEditDialog"
+          :defect="editingDefect"
+          :loading="saving"
+          @save="onSaveEditDefect"
+          @delete="onDeleteDefect"
+        />
+        <!-- снекбары -->
+        <SnackbarOk :message="snackbarOk"/>
+        <SnackbarError :message="snackbarError"/>
 
-      <header>
-        <div class="header-info">
-          <div class="header-title">
-            <v-icon icon="mdi-clipboard-text-outline" color="primary" size="40" />
-              <h1 class="header-eyebrow">Журнал дефектов · {{ projectCode }}</h1>
+        <header>
+          <div class="header-info">
+            <div class="header-title">
+              <v-icon icon="mdi-clipboard-text-outline" color="primary" size="40" />
+                <h1 class="header-eyebrow">Журнал дефектов · {{ projectCode }}</h1>
+            </div>
+
+            <div class="header-chips">
+              <v-chip size="default" prepend-icon="mdi-alert-circle-outline">
+                Всего дефектов: {{ defectStats.total }}
+              </v-chip>
+              <v-chip size="default" prepend-icon="mdi-progress-clock">
+                Новые / в работе: {{ defectStats.open }}
+              </v-chip>
+              <v-chip size="default" prepend-icon="mdi-eye-arrow-right-outline">
+                На проверке: {{ defectStats.inReview }}
+              </v-chip>
+              <v-chip size="default" prepend-icon="mdi-check-circle-outline">
+                Закрыто / отменено: {{ defectStats.closed }}
+              </v-chip>
+            </div>
           </div>
 
-          <div class="header-chips">
-            <v-chip size="default" prepend-icon="mdi-alert-circle-outline">
-              Всего дефектов: {{ defectStats.total }}
-            </v-chip>
-            <v-chip size="default" prepend-icon="mdi-progress-clock">
-              Новые / в работе: {{ defectStats.open }}
-            </v-chip>
-            <v-chip size="default" prepend-icon="mdi-eye-arrow-right-outline">
-              На проверке: {{ defectStats.inReview }}
-            </v-chip>
-            <v-chip size="default" prepend-icon="mdi-check-circle-outline">
-              Закрыто / отменено: {{ defectStats.closed }}
-            </v-chip>
-          </div>
-        </div>
-
-        <div class="header-buttons">
-          <v-btn
-            v-if="canCreateDefect"
-            color="primary"
-            prepend-icon="mdi-plus"
-            rounded="lg"
-            size="large"
-            @click="openAddDialog"
-          >
-            Новый дефект
-          </v-btn>
-          <v-btn
-            color="primary"
-            variant="tonal"
-            rounded="lg"
-            size="large"
-            height="44"
-              prepend-icon="mdi-arrow-left"
+          <div class="header-buttons">
+            <v-btn
+              v-if="canCreateDefect"
+              color="primary"
+              prepend-icon="mdi-plus"
+              rounded="lg"
+              size="large"
+              @click="openAddDialog"
             >
-              к проектам
+              Новый дефект
             </v-btn>
-        </div>
-      </header>
-
-      <main>
-        <section class="filters-card">
-          <v-text-field
-            v-model="searchQuery"
-            density="comfortable"
-            hide-details
-            variant="outlined"
-            rounded="lg"
-            color="primary"
-            style="max-width: 420px;"
-            prepend-inner-icon="mdi-magnify"
-            label="Поиск по коду, названию и содержимому дефекта"
-            clearable
-          />
-
-          <v-select
-            v-model="statusFilter"
-            :items="statusOptions"
-            density="comfortable"
-            hide-details
-            variant="outlined"
-            rounded="lg"
-            color="primary"
-            style="max-width: 240px;"
-            prepend-inner-icon="mdi-filter-variant"
-            label="Фильтр по статусу"
-            clearable
-          />
-
-          <v-select
-            v-model="priorityFilter"
-            :items="priorityOptions"
-            density="comfortable"
-            hide-details
-            variant="outlined"
-            rounded="lg"
-            color="primary"
-            style="max-width: 260px;"
-            prepend-inner-icon="mdi-alert-decagram-outline"
-            label="Фильтр по приоритету"
-            clearable
-          />
-
-          <v-select
-            v-model="sortOption"
-            :items="sortOptions"
-            density="comfortable"
-            hide-details
-            variant="outlined"
-            rounded="lg"
-            color="primary"
-            style="max-width: 320px;"
-            prepend-inner-icon="mdi-arrow-up-down"
-            label="Сортировка списка дефектов"
-            clearable
-          />
-        </section>
-
-        <section class="defects" v-if="filteredDefects.length">
-          <v-card
-            v-for="defect in filteredDefects"
-            :key="defect._id"
-            class="defect-card"
-            :class="`status-${colorStatus(defect.status)}`"
-            color="surface"
-            rounded="xl"
-          >
-            <div class="card">
-              <div>
-                <p class="card-location">{{ defect.location }}</p>
-                <p class="card-name">
-                  {{ defect.title }}
-                </p>
-              </div>
-
-              <div class="d-flex flex-column align-end ">
-                <v-chip
-                  :color="colorStatus(defect.status)"
-                  label
-                  size="small"
-                  variant="tonal"
-                  prepend-icon="mdi-progress-check"
-                >
-                  {{ defect.status }}
-                </v-chip>
-
-                <v-btn 
-                  v-if="canEditDefect"
-                  variant="text"
-                  lebal
-                  size="small"
-                  color="secondary"
-                  prepend-icon="mdi-pencil-outline"
-                  class="mt-1"
-                  density="comfortable"
-                  @click="openEditDialog(defect)"
-                > Ред. </v-btn> 
-              </div>
-            </div>
-
-            <div class="card-info">
-              
-              <div class="card-text">
-                <v-icon icon="mdi-tag-outline" size="18" :color="colorStatus(defect.status)" />
-                <p>Код: {{ defect.id }}</p>
-              </div>
-
-              <div class="card-text">
-                <v-icon icon="mdi-calendar-clock" size="18" :color="colorStatus(defect.status)" />
-                <p>Срок: {{ formatDeadline(defect.deadline) }}</p>
-              </div>
-
-              
-              
-              <div class="card-text">
-                <v-icon icon="mdi-account-outline" size="18" :color="colorStatus(defect.status)" />
-                <p>Автор: {{ defect.author }}</p>
-              </div>
-              <div class="card-text">
-                <v-icon icon="mdi-account-tie-outline" size="18" :color="colorStatus(defect.status)" />
-                <p>Ответственный: {{ defect.responsible }}</p>
-              </div>
-
-            
-            </div>
-            <div class="card-footer">
-              <div class="card-text">
-                <v-icon icon="mdi-alert-decagram-outline" size="18" :color="colorStatus(defect.status)" />
-                <p>Приоритет: {{ defect.priority }}</p>
-              </div>
-
-              <v-btn
-                variant="text"
-                :color="colorStatus(defect.status)"
-                prepend-icon="mdi-open-in-new"
-                rounded="lg"
-                height="36"
+            <v-btn
+              color="primary"
+              variant="tonal"
+              rounded="lg"
+              size="large"
+              height="44"
+              prepend-icon="mdi-arrow-left"
+              @click="router.push('/home')"
               >
-                Открыть
+                к проектам
               </v-btn>
-            </div>
-          </v-card>
-        </section>
+          </div>
+        </header>
+
+        <main>
+          <section class="filters-card">
+            <v-text-field
+              v-model="searchQuery"
+              density="comfortable"
+              hide-details
+              variant="outlined"
+              rounded="lg"
+              color="primary"
+              style="max-width: 420px;"
+              prepend-inner-icon="mdi-magnify"
+              label="Поиск по коду, названию и содержимому дефекта"
+              clearable
+            />
+
+            <v-select
+              v-model="statusFilter"
+              :items="statusOptions"
+              density="comfortable"
+              hide-details
+              variant="outlined"
+              rounded="lg"
+              color="primary"
+              style="max-width: 240px;"
+              prepend-inner-icon="mdi-filter-variant"
+              label="Фильтр по статусу"
+              clearable
+            />
+
+            <v-select
+              v-model="priorityFilter"
+              :items="priorityOptions"
+              density="comfortable"
+              hide-details
+              variant="outlined"
+              rounded="lg"
+              color="primary"
+              style="max-width: 260px;"
+              prepend-inner-icon="mdi-alert-decagram-outline"
+              label="Фильтр по приоритету"
+              clearable
+            />
+
+            <v-select
+              v-model="sortOption"
+              :items="sortOptions"
+              density="comfortable"
+              hide-details
+              variant="outlined"
+              rounded="lg"
+              color="primary"
+              style="max-width: 320px;"
+              prepend-inner-icon="mdi-arrow-up-down"
+              label="Сортировка списка дефектов"
+              clearable
+            />
+          </section>
+
+            <transition-group
+              name="list"
+              appear
+              tag="section"
+              class="defects"
+              v-if="filteredDefects.length"
+            >
+            <v-card
+              v-for="(defect, index) in filteredDefects"
+              :key="defect.id"
+              :style="{ '--i': index}"
+              class="defect-card"
+              :class="`status-${colorStatus(defect.status)}`"
+              color="surface"
+              rounded="xl"
+            >
+              <div class="card">
+                <div>
+                  <p class="card-location">{{ defect.location }}</p>
+                  <p class="card-name">
+                    {{ defect.title }}
+                  </p>
+                </div>
+
+                <div class="d-flex flex-column align-end ">
+                  <v-chip
+                    :color="colorStatus(defect.status)"
+                    label
+                    size="small"
+                    variant="tonal"
+                    prepend-icon="mdi-progress-check"
+                  >
+                    {{ defect.status }}
+                  </v-chip>
+
+                  <v-btn 
+                    v-if="canEditDefect"
+                    variant="text"
+                    lebal
+                    size="small"
+                    color="secondary"
+                    prepend-icon="mdi-pencil-outline"
+                    class="mt-1"
+                    density="comfortable"
+                    @click="openEditDialog(defect)"
+                  > Ред. </v-btn> 
+                </div>
+              </div>
+
+              <div class="card-info">
+                
+                <div class="card-text">
+                  <v-icon icon="mdi-tag-outline" size="18" :color="colorStatus(defect.status)" />
+                  <p>Код: {{ defect.id }}</p>
+                </div>
+
+                <div class="card-text">
+                  <v-icon icon="mdi-calendar-clock" size="18" :color="colorStatus(defect.status)" />
+                  <p>Срок: {{ formatDeadline(defect.deadline) }}</p>
+                </div>
+
+                
+                
+                <div class="card-text">
+                  <v-icon icon="mdi-account-outline" size="18" :color="colorStatus(defect.status)" />
+                  <p>Автор: {{ defect.author }}</p>
+                </div>
+                <div class="card-text">
+                  <v-icon icon="mdi-account-tie-outline" size="18" :color="colorStatus(defect.status)" />
+                  <p>Ответственный: {{ defect.responsible }}</p>
+                </div>
+
+              
+              </div>
+              <div class="card-footer">
+                <div class="card-text">
+                  <v-icon icon="mdi-alert-decagram-outline" size="18" :color="colorStatus(defect.status)" />
+                  <p>Приоритет: {{ defect.priority }}</p>
+                </div>
+
+                <v-btn
+                  variant="text"
+                  :color="colorStatus(defect.status)"
+                  prepend-icon="mdi-open-in-new"
+                  rounded="lg"
+                  height="36"
+                  :to="`/defects/${defect.id}`"
+                >
+                  Открыть
+                </v-btn>
+              </div>
+            </v-card>
+            </transition-group>
 
 
-        <section v-else class="zero-defects">
-          <v-icon size="64" icon="mdi-clipboard-alert-outline" color="secondary"/>
-            <p class="zero-title">Дефекты не найдены</p>
-          <p class="zero-subtitle">Для этого объекта ещё не зарегистрированы дефекты или фильтры скрывают результаты.</p>
-        </section>
-      </main>
-    </div>
+          <section v-else class="zero-defects">
+            <v-icon size="64" icon="mdi-clipboard-alert-outline" color="secondary"/>
+              <p class="zero-title">Дефекты не найдены</p>
+            <p class="zero-subtitle">Для этого объекта ещё не зарегистрированы дефекты или фильтры скрывают результаты.</p>
+          </section>
+        </main>
+      </div>
+    </transition>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 import { useAuthStore } from '../store/auth.js'
 
@@ -233,8 +252,11 @@ import defectEdit from '../components/defectEdit.vue'
 import SnackbarOk from '../components/snackbarOk.vue'
 import SnackbarError from '../components/snackbarError.vue'
 
+const loading = ref(true);
+
 const authStore = useAuthStore();
 const route = useRoute();
+const router = useRouter();
 // получаем код проекта
 const projectCode = route.params.code;
 
@@ -276,25 +298,21 @@ onMounted(async() => {
   try {
     const response = await axios.get('/api/defects', { params: { projectCode: projectCode }  })
     defects.value = response.data;
-
+    loading.value = false;
     console.log('дефекты загружены')
   } catch(error){
+    loading.value = false;
     console.log('ошибка загрузки дефектов', error)
   }
 })
 
 
-const onSaveNewDefect = async (formPayload) => {
-  saving.value = true
+const onSaveNewDefect = async (newDefect) => {
+  saving.value = true;
   try {
-    const newDefect = {
-      ...formPayload,
-      projectCode: projectCode
-    }
-
-    const response = await axios.post('/api/defects', newDefect)
+    const response = await axios.post('/api/defects', { ...newDefect, projectCode});
     
-    defects.value.push(response.data.defect)
+    defects.value.push(response.data.defect);
 
     snackbarOk.value = response.data.message;
     clearOkSnackbar()
@@ -334,11 +352,11 @@ const onSaveEditDefect = async (updatedDefect) => {
   }
 }
 
-const onDeleteDefect = async (mongoId) => {
+const onDeleteDefect = async (id) => {
   try {
     
-    const response = await axios.delete(`/api/defects/${mongoId}`)
-    defects.value = defects.value.filter(d => d._id !== mongoId)
+    const response = await axios.delete(`/api/defects/${id}`)
+    defects.value = defects.value.filter(d => d.id !== id)
 
     snackbarOk.value = response.data.message;
     clearOkSnackbar()
@@ -646,6 +664,42 @@ main {
   transform: translateY(-2px);
 }
 
+
+/* анимация карточек */
+.defects {
+  position: relative;
+}
+/* работает только при входе - используем переменную индекса */
+.list-enter-active {
+  transition: all 0.4s ease-out;
+  transition-delay: calc(var(--i) * 100ms);
+}
+
+/* исчезновение */
+.list-leave-active {
+  transition: all 0.4s ease-out;
+
+  position: absolute; 
+  z-index: -1;
+}
+
+/* начальное, конечное состояние) */
+.list-enter-from, .list-leave-to {
+  opacity: 0;
+  transform: translateY(30px);
+}
+
+/* сортировка */
+.list-move {
+  transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+  transition-delay: 0s !important; 
+}
+/* отключаем transition самой карточки во время сортировки, чтобы управлял только transition-group */
+.list-move .project-card {
+  transition: none !important;
+}
+
+
 /* сообщение об отсутсвие дефектов */
 .zero-defects {
   padding: 48px;
@@ -667,6 +721,22 @@ main {
   line-height: 1.4;
   max-width: 420px;
   color: rgb(var(--v-theme-secondary));
+}
+
+/* анимация при появлении страницы */
+.fade-enter-active,
+.fade-leave-active {
+  transition: all 0.4s ease-out; 
+}
+
+.fade-enter-from {
+  opacity: 0;
+  transform: translateY(30px) scale(0.98); 
+}
+
+.fade-leave-to {
+  opacity: 0;
+  transform: scale(0.95); 
 }
 
 /* адаптив */

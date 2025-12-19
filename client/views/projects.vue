@@ -1,237 +1,252 @@
 ﻿<template>
   <div class="projects-page">
-    <div class="projects-wrapper">
-      <projectAdd
-        v-model="showAddDialog" 
-        :loading="saving" 
-        @save="onSaveNewProject"
-      />
-
-      <projectEdit
-          v-model="showEditDialog" 
-          :project="editingProject" 
+    <transition name="fade" mode="out-in">
+      <div 
+        v-if="loading" 
+        key="loader"
+        class="d-flex justify-center align-center w-100" 
+        style="height: 100vh; position: fixed;"
+      >
+          <v-progress-circular indeterminate color="primary" size="64" />
+      </div>
+      <div v-else key="content" class="projects-wrapper">
+        <projectAdd
+          v-model="showAddDialog" 
           :loading="saving" 
-          @save="onSaveEditProject" 
-          @delete="onDeleteProject" 
-      />
-      <!-- снекбары -->
-      <SnackbarOk :message="snackbarOk"/>
-      <SnackbarError :message="snackbarError"/>
-        
-      <header>
-          <div class="header-info">
-            <div class="header-title">
-              <v-icon icon="mdi-domain" color="primary" size="40" />
-              <h1>Объекты и этапы работ</h1>
-            </div>
-            <div class="header-chips">
-              <v-chip
-                size="default"
-                prepend-icon="mdi-office-building-outline"
-                >
-                Проектов: {{ projectStats.total }}
-              </v-chip>
-              <v-chip
-                size="default"
-                prepend-icon="mdi-progress-clock"
-                >
-                Новые / в работе: {{ projectStats.active  }}
-              </v-chip>
-              <v-chip
-                size="default"
-                prepend-icon="mdi-eye-arrow-right-outline"
-              >
-                На проверке: {{ projectStats.inReview }}
-              </v-chip>
-              <v-chip
-                size="default"
-                prepend-icon="mdi-check-circle-outline"
-              >
-                Закрыто / отменено: {{ projectStats.closed }}
-              </v-chip>
-            </div>
-          </div>
+          @save="onSaveNewProject"
+        />
 
-          <div class="header-buttons">
-            <v-btn
-              v-if="authStore.isManager"
-              color="primary"
-              prepend-icon="mdi-plus" 
-              rounded="lg" 
-              size="large"
-              @click="openAddDialog"
-              >
-              Новый проект
-            </v-btn>
-            <v-btn
-              color="primary"
-              variant="tonal"
-              rounded="lg"          
-              prepend-icon="mdi-account-circle-outline"
-              size="large"
-            > Профиль </v-btn>
-          </div>
-      </header>
-
-      <main>
-        <section class="filters-card">
-            <v-text-field
-              v-model="searchQuery"
-              density="comfortable"
-              hide-details
-              variant="outlined"
-              rounded="lg"
-              color="primary"
-              style=" max-width: 420px;"
-              prepend-inner-icon="mdi-magnify"
-              label="Поиск по объекту, коду или описанию"
-              clearable
-            />
-            <v-select
-              v-model="statusFilter"
-              density="comfortable"
-              hide-details
-              variant="outlined"
-              rounded="lg"
-              color="primary"
-              style=" max-width: 240px;"
-              prepend-inner-icon="mdi-filter-variant"
-              :items="statusOptions"
-              label="Фильтр по статусу"
-              clearable
-            />
-            <v-select
-              v-model="priorityFilter"
-              :items="priorityOptions"
-              density="comfortable"
-              hide-details
-              variant="outlined"
-              rounded="lg"
-              color="primary"
-              style="max-width: 260px;"
-              prepend-inner-icon="mdi-alert-decagram-outline"
-              label="Фильтр по приоритету"
-              clearable
-            />
-            <v-select
-              v-model="sortOption"
-              density="comfortable"
-              hide-details
-              variant="outlined"
-              rounded="lg"
-              color="primary"
-              style="max-width: 310px;"
-              prepend-inner-icon="mdi-arrow-up-down"
-              :items="sortOptions"
-              label="Сортировка списка проектов"
-              clearable
-            />
-        </section>
-        
-          <transition-group
-            name="list"
-            appear
-            tag="section"
-            class="projects"
-            v-if="filteredProjects.length"
-          >
-            <v-card 
-              class="project-card"
-              :class="`status-${colorStatus(project.status)}`"
-              color="surface"
-              rounded="xl"
-              v-for="(project, index) in filteredProjects" 
-              :key="project.code"
-              :style="{ '--i': index }"
-            >
-              <div class="card">
-                <div>
-                  <p class="card-stage">{{ project.stage }}</p>
-                  <h2 class="card-name">{{ project.name }}</h2>
-                </div>
-                <div class="d-flex flex-column align-end ">
-                  <v-chip
-                    :color="colorStatus(project.status)"
-                    label
-                    size="small"
-                    variant="tonal"
-                    prepend-icon="mdi-progress-check"
+        <projectEdit
+            v-model="showEditDialog" 
+            :project="editingProject" 
+            :loading="saving" 
+            @save="onSaveEditProject" 
+            @delete="onDeleteProject" 
+        />
+        <!-- снекбары -->
+        <SnackbarOk :message="snackbarOk"/>
+        <SnackbarError :message="snackbarError"/>
+          
+        <header>
+            <div class="header-info">
+              <div class="header-title">
+                <v-icon icon="mdi-domain" color="primary" size="40" />
+                <h1>Объекты и этапы работ</h1>
+              </div>
+              <div class="header-chips">
+                <v-chip
+                  size="default"
+                  prepend-icon="mdi-office-building-outline"
                   >
-                    {{ project.status }}
-                  </v-chip>
-
-                  <v-btn 
-                    v-if="authStore.isManager"
-                    variant="text"
-                    lebal
-                    size="small"
-                    color="secondary"
-                    prepend-icon="mdi-pencil-outline"
-                    class="mt-1"
-                    density="comfortable"
-                    @click="openEditDialog(project) "
-                    > Ред. </v-btn> 
-                </div>
-              </div>
-
-              <div class="card-info">
-                <div class="card-text">
-                  <v-icon icon="mdi-tag-outline" size="18" :color="colorStatus(project.status)"/>
-                  <p>{{ project.code }}</p>
-                </div>
-                <div class="card-text">
-                  <v-icon icon="mdi-map-marker-outline" size="18" :color="colorStatus(project.status)"/>
-                  <p>{{ project.location }}</p>
-                </div>
-                <div class="card-text">
-                  <v-icon icon="mdi-calendar-clock" size="18" :color="colorStatus(project.status)" />
-                  <p>Срок: {{ formatDeadline(project.deadline) }}</p>
-                </div>
-                <div class="card-text">
-                  <v-icon icon="mdi-account-tie-outline" size="18" :color="colorStatus(project.status)" />
-                  <p>Ответственный: {{ project.manager }}</p>
-                </div>
-                
-              </div>
-
-              <v-progress-linear
-                :model-value="project.progress"
-                :color="colorStatus(project.status)"
-                height="8"
-                rounded="lg"
-                class="progress-bar"
-              />
-
-              <div class="card-progress card-text">
-                <p>{{ project.progress }}% готовности</p>
-                <p>{{ project.defectsOpen }} дефектов / {{ project.defectsClosed }} закрыто</p>
-              </div>
-
-              <div class="card-footer">
-                <div class="card-text">
-                  <v-icon icon="mdi-alert-decagram-outline" size="18" :color="colorStatus(project.status)" />
-                  <p>Приоритет: {{ project.priority }}</p>
-                </div>
-                <v-btn
-                  variant="text"
-                  :color="colorStatus(project.status)"
-                  prepend-icon="mdi-open-in-new"
-                  rounded="lg"
-                  height="36"
-                  @click="router.push(`/projects/${project.code}/defects`)"
+                  Проектов: {{ projectStats.total }}
+                </v-chip>
+                <v-chip
+                  size="default"
+                  prepend-icon="mdi-progress-clock"
+                  >
+                  Новые / в работе: {{ projectStats.active  }}
+                </v-chip>
+                <v-chip
+                  size="default"
+                  prepend-icon="mdi-eye-arrow-right-outline"
                 >
-                  Открыть
-                </v-btn>
+                  На проверке: {{ projectStats.inReview }}
+                </v-chip>
+                <v-chip
+                  size="default"
+                  prepend-icon="mdi-check-circle-outline"
+                >
+                  Закрыто / отменено: {{ projectStats.closed }}
+                </v-chip>
               </div>
-            </v-card>
-          </transition-group >
-        <section v-else class="zero-projects">
-          <v-icon size="64" icon="mdi-folder-open-outline" color="secondary"/>
-            <p class="zero-title">Нет проектов</p>
-          <p class="zero-subtitle">Измените фильтры или создайте первый проект, чтобы начать фиксировать дефекты</p>
-        </section>
-      </main>
-    </div>
+            </div>
+
+            <div class="header-buttons">
+              <v-btn
+                v-if="authStore.isManager"
+                color="primary"
+                prepend-icon="mdi-plus" 
+                rounded="lg" 
+                size="large"
+                @click="openAddDialog"
+                >
+                Новый проект
+              </v-btn>
+              <v-btn
+                v-else-if="authStore.role"
+                color="primary"
+                prepend-icon="mdi-chart-bar" 
+                rounded="lg" 
+                size="large"
+                @click="router.push('/report')"
+                >
+                Аналитика и отчётность
+              </v-btn>
+
+              <profile />
+            </div>
+        </header>
+
+        <main>
+          <section class="filters-card">
+              <v-text-field
+                v-model="searchQuery"
+                density="comfortable"
+                hide-details
+                variant="outlined"
+                rounded="lg"
+                color="primary"
+                style=" max-width: 420px;"
+                prepend-inner-icon="mdi-magnify"
+                label="Поиск по объекту, коду или описанию"
+                clearable
+              />
+              <v-select
+                v-model="statusFilter"
+                density="comfortable"
+                hide-details
+                variant="outlined"
+                rounded="lg"
+                color="primary"
+                style=" max-width: 240px;"
+                prepend-inner-icon="mdi-filter-variant"
+                :items="statusOptions"
+                label="Фильтр по статусу"
+                clearable
+              />
+              <v-select
+                v-model="priorityFilter"
+                :items="priorityOptions"
+                density="comfortable"
+                hide-details
+                variant="outlined"
+                rounded="lg"
+                color="primary"
+                style="max-width: 260px;"
+                prepend-inner-icon="mdi-alert-decagram-outline"
+                label="Фильтр по приоритету"
+                clearable
+              />
+              <v-select
+                v-model="sortOption"
+                density="comfortable"
+                hide-details
+                variant="outlined"
+                rounded="lg"
+                color="primary"
+                style="max-width: 310px;"
+                prepend-inner-icon="mdi-arrow-up-down"
+                :items="sortOptions"
+                label="Сортировка списка проектов"
+                clearable
+              />
+          </section>
+          
+            <transition-group
+              name="list"
+              appear
+              tag="section"
+              class="projects"
+              v-if="filteredProjects.length"
+            >
+              <v-card 
+                class="project-card"
+                :class="`status-${colorStatus(project.status)}`"
+                color="surface"
+                rounded="xl"
+                v-for="(project, index) in filteredProjects" 
+                :key="project.code"
+                :style="{ '--i': index }"
+              >
+                <div class="card">
+                  <div>
+                    <p class="card-stage">{{ project.stage }}</p>
+                    <h2 class="card-name">{{ project.name }}</h2>
+                  </div>
+                  <div class="d-flex flex-column align-end ">
+                    <v-chip
+                      :color="colorStatus(project.status)"
+                      label
+                      size="small"
+                      variant="tonal"
+                      prepend-icon="mdi-progress-check"
+                    >
+                      {{ project.status }}
+                    </v-chip>
+
+                    <v-btn 
+                      v-if="authStore.isManager"
+                      variant="text"
+                      lebal
+                      size="small"
+                      color="secondary"
+                      prepend-icon="mdi-pencil-outline"
+                      class="mt-1"
+                      density="comfortable"
+                      @click="openEditDialog(project) "
+                      > Ред. </v-btn> 
+                  </div>
+                </div>
+
+                <div class="card-info">
+                  <div class="card-text">
+                    <v-icon icon="mdi-tag-outline" size="18" :color="colorStatus(project.status)"/>
+                    <p>{{ project.code }}</p>
+                  </div>
+                  <div class="card-text">
+                    <v-icon icon="mdi-map-marker-outline" size="18" :color="colorStatus(project.status)"/>
+                    <p>{{ project.location }}</p>
+                  </div>
+                  <div class="card-text">
+                    <v-icon icon="mdi-calendar-clock" size="18" :color="colorStatus(project.status)" />
+                    <p>Срок: {{ formatDeadline(project.deadline) }}</p>
+                  </div>
+                  <div class="card-text">
+                    <v-icon icon="mdi-account-tie-outline" size="18" :color="colorStatus(project.status)" />
+                    <p>Ответственный: {{ project.manager }}</p>
+                  </div>
+                  
+                </div>
+
+                <v-progress-linear
+                  :model-value="project.progress"
+                  :color="colorStatus(project.status)"
+                  height="8"
+                  rounded="lg"
+                  class="progress-bar"
+                />
+
+                <div class="card-progress card-text">
+                  <p>{{ project.progress }}% готовности</p>
+                  <p>{{ project.defectsOpen }} дефектов / {{ project.defectsClosed }} закрыто</p>
+                </div>
+
+                <div class="card-footer">
+                  <div class="card-text">
+                    <v-icon icon="mdi-alert-decagram-outline" size="18" :color="colorStatus(project.status)" />
+                    <p>Приоритет: {{ project.priority }}</p>
+                  </div>
+                  <v-btn
+                    variant="text"
+                    :color="colorStatus(project.status)"
+                    prepend-icon="mdi-open-in-new"
+                    rounded="lg"
+                    height="36"
+                    @click="router.push(`/projects/${project.code}/defects`)"
+                  >
+                    Открыть
+                  </v-btn>
+                </div>
+              </v-card>
+            </transition-group >
+          <section v-else class="zero-projects">
+            <v-icon size="64" icon="mdi-folder-open-outline" color="secondary"/>
+              <p class="zero-title">Нет проектов</p>
+            <p class="zero-subtitle">Измените фильтры или создайте первый проект, чтобы начать фиксировать дефекты</p>
+          </section>
+        </main>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -243,9 +258,11 @@ import projectAdd from '../components/projectAdd.vue'
 import projectEdit from '../components/projectEdit.vue'
 import SnackbarOk from '../components/snackbarOk.vue'
 import SnackbarError from '../components/snackbarError.vue'
+import profile from '../components/profile.vue'
 
 import axios from 'axios'
 
+const loading = ref(true);
 const router = useRouter();
 const authStore = useAuthStore();
 
@@ -253,9 +270,11 @@ onMounted(async () => {
   try {
     const response = await axios.get('/api/projects')
     projects.value = response.data
+    loading.value = false;
   } catch (error) {
     console.log('Ошибка при получении проектов:', error)
     projects.value = []
+    loading.value = false;
   }
 })
 
@@ -293,7 +312,7 @@ const onSaveNewProject = async(newProject) => {
   saving.value = true;
   try {
     const response = await axios.post('/api/projects', newProject);
-    projects.value.push(newProject);
+    projects.value.push(response.data.project);
 
     snackbarOk.value = response.data.message;
     clearOkSnackbar();
@@ -311,19 +330,20 @@ const onSaveNewProject = async(newProject) => {
 const onSaveEditProject = async(updateProject) => {
   saving.value = true;
   try {
-    const response = await axios.put(`/api/projects/${updateProject.code}`, updateProject);
-    const index = projects.value.findIndex(p => p.code === updateProject.code);
+    const response = await axios.put(`/api/projects/${updateProject._id}`, updateProject);
+    const index = projects.value.findIndex(p => p._id === updateProject._id);
 
     if (index !== -1) {
-      projects.value[index] = updateProject;
+      projects.value[index] = { ...updateProject };
     }
 
       snackbarOk.value = response.data.message;
-      clearOkSnackbar();
+      clearOkSnackbar();  
 
       saving.value = false;
       showEditDialog.value = false;
-    
+
+      editingProject.value = null;
     } catch (error) {
       snackbarError.value = error.response.data.message;
       clearErrorSnackbar();
@@ -335,7 +355,7 @@ const onSaveEditProject = async(updateProject) => {
 const onDeleteProject = async (code) => {
   try {
     const response = await axios.delete(`/api/projects/${code}`)
-    projects.value = projects.value.filter(p => p.code !== code) 
+    projects.value = projects.value.filter(d => d.code !== code) 
 
     snackbarOk.value = response.data.message;
     clearOkSnackbar();
@@ -703,6 +723,21 @@ projects {
   color: rgb(var(--v-theme-secondary));
 }
 
+/* анимация при появлении страницы */
+.fade-enter-active,
+.fade-leave-active {
+  transition: all 0.4s ease-out; 
+}
+
+.fade-enter-from {
+  opacity: 0;
+  transform: translateY(30px) scale(0.98); 
+}
+
+.fade-leave-to {
+  opacity: 0;
+  transform: scale(0.95); 
+}
 
 @media (max-width: 1200px) {
   .projects-wrapper {
